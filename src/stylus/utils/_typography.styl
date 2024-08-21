@@ -1,0 +1,53 @@
+// Typography
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+
+// Typographic Variables
+//////////////////////////////////////////////////////
+
+// Guide
+
+$font-family = 'Press Start 2P'
+
+$font-weight = {
+  regular: 400,
+}
+
+$letter-spacing = {
+  normal: normal
+}
+
+// Universal Typographic Mixin
+//////////////////////////////////////////////////////
+
+// We use one, only one, Karl, a universal mixin for all cases!
+
+$text($name)
+  font-family $font-family
+  letter-spacing $letter-spacing.normal
+
+  if $name == "olga"
+    font-size 72px
+    line-height 72px
+    font-weight $font-weight.regular
+  if $name == "katya"
+    font-size 48px
+    line-height 56px
+    font-weight $font-weight.regular
+  if $name == "elena"
+    font-size 20px
+    line-height 26px
+    font-weight $font-weight.regular
+  if $name == "maria"
+    font-size 16px
+    line-height 20px
+    font-weight $font-weight.regular
+  if $name == "nina"
+    font-size 14px
+    line-height 18px
+    font-weight $font-weight.regular
+  if $name == "natasha"
+    font-size 9px
+    line-height 12px
+    font-weight $font-weight.regular

@@ -1,0 +1,65 @@
+// Project mixins
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+// The fundamental difference between mixins and placeholders is that, in addition to compilation nuances -
+// placeholders, unlike mixin parameters, are not included in media queries,
+// but themselves, at the same time, can use them. Mixins can take arguments, and most importantly, content.
+
+// Media
+//////////////////////////////////////////////////////
+
+$small()
+  @media only screen and (max-width $breakpoints.small)
+    {block}
+
+$desktop()
+  @media only screen and (min-width $breakpoints.desktop)
+    {block}
+
+$gadgets()
+  @media only screen and (max-width $breakpoints.tablet--max)
+    {block}
+
+
+// Opacity
+//////////////////////////////////////////////////////
+
+$opacity($name)
+  if $name == "waltz"
+    opacity $opacites.waltz
+  if $name == "funky"
+    opacity $opacites.funky
+  if $name == "rock"
+    opacity $opacites.rock
+  if $name == "psy"
+    opacity $opacites.psy
+  if $name == "pop"
+    opacity $opacites.pop
+  if $name == "reggae"
+    opacity $opacites.reggae
+
+
+// Elements
+
+$button--hover($color)
+  &:hover
+    background rgba($color, $opacites.pop)
+
+$button($color)
+  user-select none
+  cursor pointer
+  white-space nowrap
+  outline none
+  text-align center
+  transition background $effects.duration
+  background transparent
+  color $color
+  padding ($gutter / 4) ($gutter * 1.5)
+  border $border-width solid $color
+  box-shadow none
+  text-decoration none
+  text-transform uppercase
+  outline none
+  $text("katya")
+  $button--hover($color)
