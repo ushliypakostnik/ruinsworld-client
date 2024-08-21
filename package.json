@@ -6,8 +6,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "test:unit": "vue-cli-service test:unit"
+    "lint": "vue-cli-service lint"
   },
   "dependencies": {
     "axios": "^1.2.1",
@@ -44,9 +43,9 @@
     "typescript": "~4.1.5",
     "vue-cli-plugin-style-resources-loader": "~0.1.5"
   },
-  "license": "ISC",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ushliypakostnik/new-game"
+    "url": "https://github.com/ushliypakostnik/ruinsworld-client"
   }
 }
