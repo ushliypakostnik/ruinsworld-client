@@ -12,7 +12,6 @@
     "sourceMap": true,
     "baseUrl": ".",
     // "strictNullChecks": false, // bad practice
-    "types": ["webpack-env"],
     "paths": {
       "@/*": ["src/*"]
     },
