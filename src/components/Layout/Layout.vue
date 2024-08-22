@@ -102,7 +102,7 @@
         </div>
         <div class="layout__name">{{ name }}</div>
 
-        <Map class="layout__map" v-if="isMap" />
+        <Map class="layout__map" v-if="isMap && !isReload" />
 
         <div class="layout__effect" />
 
@@ -220,6 +220,7 @@ export default defineComponent({
       () => store.getters['preloader/isGameLoaded'],
     );
     const isEnter = computed(() => store.getters['persist/isEnter']);
+    const isReload = computed(() => store.getters['not/isReload']);
     const locationData = computed(() => store.getters['api/locationData']);
     const isOnHit = computed(() => store.getters['api/isOnHit']);
     const health = computed(() => store.getters['api/health']);
@@ -334,6 +335,7 @@ export default defineComponent({
       isBro,
       isGameLoaded,
       isEnter,
+      isReload,
       isGameOver,
       isPause,
       isOptical,
