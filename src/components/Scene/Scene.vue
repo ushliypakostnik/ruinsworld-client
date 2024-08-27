@@ -161,7 +161,7 @@ export default defineComponent({
         world.onShot(self, shot);
       });
 
-      container.appendChild(stats.dom);
+      // container.appendChild(stats.dom);
 
       // First render
       onWindowResize();
@@ -299,6 +299,7 @@ export default defineComponent({
       octree: new Octree(),
       octree2: new Octree(),
       octree3: new Octree(),
+      octree4: new Octree(),
 
       // state
       keys,

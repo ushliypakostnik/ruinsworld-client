@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import type { Group, Mesh } from 'three';
 import type { ISelf } from '@/models/modules';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import type { IShot, IUnitInfo, IHitsUpdate } from '@/models/api';
+import type { IShot, IUnitInfo, IHitsUpdate, ILocation } from '@/models/api';
 
 // Constants
-import { Names, Textures } from '@/utils/constants';
+import { Audios, Names, Textures } from '@/utils/constants';
+import { EmitterEvents } from '@/models/api';
 
 // Modules
 import Atmosphere from '@/components/Scene/World/Atmosphere/Atmosphere';
@@ -19,13 +20,17 @@ import Explosions from '@/components/Scene/World/Weapon/Explosions';
 import Bloods from '@/components/Scene/World/Atmosphere/Bloods';
 import Octree from '@/components/Scene/World/Math/Octree';
 
+// Utils
+import emitter from '@/utils/emitter';
+
 export default class World {
   public name = Names.world;
 
   private _group!: Group;
-  private _pseudo!: Mesh;
   private _mesh!: Mesh;
+  private _pseudo!: Mesh;
   private _list!: IUnitInfo[];
+  private _deads!: Mesh[];
 
   // Modules
   private _athmosphere: Atmosphere;
@@ -48,11 +53,10 @@ export default class World {
     this._npc = new NPC();
 
     this._group = new THREE.Group();
+    this._deads = [];
   }
 
   public init(self: ISelf): void {
-    // this._location = self.store.getters['api/locationData'];
-
     self.assets.GLTFLoader.load('./images/models/ground.glb', (model: GLTF) => {
       self.helper.loaderDispatchHelper(self.store, this.name);
       this._group = model.scene;
@@ -66,6 +70,44 @@ export default class World {
       this._lights.init(self);
       this._explosions.init(self);
       this._bloods.init(self);
+
+      // Реагировать на открытие двери
+      emitter.on(EmitterEvents.door, (door) => {
+        this._athmosphere.door(self, door as string);
+      });
+
+      // Реагировать на необходимость обновить двери
+      emitter.on(EmitterEvents.doors, () => {
+        this._updateOctre4(self);
+      });
+
+      // Реагировать на новый труп
+      emitter.on(EmitterEvents.dead, (message: any) => {
+        this._pseudo = self.scene.getObjectByProperty(
+          'uuid',
+          message.mesh as string,
+        ) as Mesh;
+        if (this._pseudo) {
+          this._deads.push(this._pseudo);
+        }
+      });
+
+      // Реагировать на ответ на подбор
+      emitter.on(EmitterEvents.onPick, (message: any) => {
+        this._pseudo = self.scene.getObjectByProperty(
+          'uuid',
+          message.uuid as string,
+        ) as Mesh;
+        if (this._pseudo) {
+          this._deads = this._deads.filter((box) => box.uuid !== message.uuid);
+          this._pseudo.removeFromParent();
+        }
+
+        self.store.dispatch('api/setApiState', {
+          field: 'exp',
+          value: message.exp,
+        });
+      });
     });
   }
 
@@ -75,22 +117,11 @@ export default class World {
       this._group.add(mesh);
     });
 
-    /*
-    // Эксперимент!!!
-    this._exp = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(
-        30,
-        3,
-      ),
-      self.assets.getMaterial(Textures.pseudo),
-    );
-    this._exp.position.set(0, -10, 1);
-    this._group.add(this._exp);
-    */
-
     // Создаем октодерево
     self.octree.fromGraphNode(this._group);
+
     self.scene.add(this._group);
+    this._group.remove();
 
     // Нулевой элемент для второго дерева
     const pseudoGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
@@ -100,8 +131,32 @@ export default class World {
     );
     this._mesh.position.y = -3;
 
+    // Создаем октодерево из дверей
+    this._updateOctre4(self);
+
+    // Добавляем звуки на двери
+    this._athmosphere.doors.forEach((mesh) => {
+      self.audio.addAudioOnObject(self, mesh.uuid, Audios.door);
+      self.audio.setPlaybackRateOnObjectSound(mesh.uuid, Audios.door, 0.5);
+    });
+
     self.render();
     self.helper.loaderDispatchHelper(self.store, this.name, true);
+  }
+
+  // Пересоздание октодерева дверей
+  private _updateOctre4(self: ISelf): void {
+    this._group = new THREE.Group();
+    this._athmosphere.doors.forEach((mesh) => {
+      this._group.add(mesh);
+    });
+
+    // Пересоздаем октодерево
+    self.octree4 = new Octree();
+    self.octree4.fromGraphNode(this._group);
+
+    self.scene.add(this._group);
+    this._group.remove();
   }
 
   // Пересоздание октодерева из ближайших игроков и неписей
@@ -144,14 +199,13 @@ export default class World {
   private _updateOctree3(self: ISelf): void {
     this._group = new THREE.Group();
     this._group.add(this._mesh);
-    this._list
-      .forEach((unit: IUnitInfo) => {
-        this._pseudo = self.scene.getObjectByProperty(
-          'uuid',
-          unit.pseudo,
-        ) as Mesh;
-        if (this._pseudo) this._group.add(this._pseudo);
-      });
+    this._list.forEach((unit: IUnitInfo) => {
+      this._pseudo = self.scene.getObjectByProperty(
+        'uuid',
+        unit.pseudo,
+      ) as Mesh;
+      if (this._pseudo) this._group.add(this._pseudo);
+    });
     self.scene.add(this._group);
     self.octree3 = new Octree();
     self.octree3.fromGraphNode(this._group);
@@ -175,7 +229,9 @@ export default class World {
     this._players.onHit(self, ids.users);
     this._bloods.onHit(
       self,
-      this._list.filter((unit: IUnitInfo) => [...ids.users, ...ids.npc].includes(unit.id)),
+      this._list.filter((unit: IUnitInfo) =>
+        [...ids.users, ...ids.npc].includes(unit.id),
+      ),
     );
   }
 
@@ -188,7 +244,13 @@ export default class World {
       this._time = 0;
     }
 
-    this._players.animate(self);
+    this._players.animate(
+      self,
+      this._athmosphere.world
+        .concat(this._athmosphere.doors)
+        .concat(this._athmosphere.point)
+        .concat(this._deads),
+    );
     this._npc.animate(self);
     this._athmosphere.animate(self);
     this._shots.animate(self, this._list);

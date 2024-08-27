@@ -45,3 +45,13 @@ type TResultTrue = {
   depth: number;
 };
 export type TResult = TResultTrue | false;
+
+export type Doors = {
+  id: string;
+  isOpen: boolean;
+  isPause: boolean;
+  isClose: boolean;
+  direction: boolean;
+  distance: number;
+  time: number;
+};

@@ -190,7 +190,7 @@ export default class Enemies {
   }
 
   private _addPlayer(self: ISelf, player: IUnit): void {
-    console.log('Enemies _addPlayer(): ', player);
+    // console.log('Enemies _addPlayer(): ', player);
     this._isHide = player.animation.includes('hide');
 
     if (player.race === Races.reptiloid) this._modelClone = clone(this._modelReptil);
@@ -274,6 +274,7 @@ export default class Enemies {
       isStepsStop: false,
       isIdlePlay: false,
       isIdleStop: false,
+      isSetDead: false,
     };
     this._userThree.prevAction.play();
     self.scene.add(this._modelClone);

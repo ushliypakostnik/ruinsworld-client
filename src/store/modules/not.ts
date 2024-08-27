@@ -11,8 +11,11 @@ import type {
 const initialState: IStoreModule = {
   isOptical: false,
   isMap: false,
-  messages: [], // Сообщения сейчас
+  message: null, // "Постоянное" cообщение сейчас
+  content: null, // Контент постоянного сообщения
+  messages: [], // Короткие сообщения сейчас
   isReload: false, // Перед принудительной перезагрузкой
+  isPick: false, // Подбор предмета
 };
 
 let array: Array<TEventMessagePayload> = [];
@@ -24,8 +27,11 @@ const not: Module<IStoreModule, IStore> = {
   getters: {
     isOptical: (state: IStoreModule) => state.isOptical,
     isMap: (state: IStoreModule) => state.isMap,
+    message: (state: IStoreModule) => state.message,
+    content: (state: IStoreModule) => state.content,
     messages: (state: IStoreModule) => state.messages,
     isReload: (state: IStoreModule) => state.isReload,
+    isPick: (state: IStoreModule) => state.isPick,
   },
 
   actions: {
@@ -39,6 +45,21 @@ const not: Module<IStoreModule, IStore> = {
 
     hideMessage: ({ commit }, payload: number): void => {
       commit('hideMessage', payload);
+    },
+
+    showPermanentMessage: ({ commit }, payload: TEventMessagePayload): void => {
+      commit('showPermanentMessage', payload);
+    },
+
+    hidePermanentMessage: ({ commit }, payload: number): void => {
+      commit('hidePermanentMessage', payload);
+    },
+
+    showPermanentMessageWithContent: (
+      { commit },
+      payload: TEventMessagePayload,
+    ): void => {
+      commit('showPermanentMessageWithContent', payload);
     },
   },
 
@@ -58,6 +79,23 @@ const not: Module<IStoreModule, IStore> = {
         (message: TEventMessagePayload) => message.id !== payload,
       );
       state.messages = array;
+    },
+
+    showPermanentMessage: (state: IStoreModule, payload: string): void => {
+      state.message = payload;
+    },
+
+    hidePermanentMessage: (state: IStoreModule): void => {
+      state.message = null;
+      state.content = null;
+    },
+
+    showPermanentMessageWithContent: (
+      state: IStoreModule,
+      payload: { message: string; content: string },
+    ): void => {
+      state.message = payload.message;
+      state.content = payload.content;
     },
   },
 };

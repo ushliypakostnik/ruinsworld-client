@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 
 // Constants
-import { Names, Textures, Audios } from '@/utils/constants';
+import { Names, Textures, Audios, DESIGN } from '@/utils/constants';
 
 // Types
 import type {
@@ -230,5 +230,26 @@ export default class Helper {
         if (name === Audios.wind) self.audio.startHeroSound(Audios.wind);
       });
     }
+  }
+
+  // Помощник подбора
+  public pickDispatchHelper(self: ISelf): void {
+    self.audio.startHeroSound(Audios.pick);
+    self.store
+      .dispatch('not/setNotState', {
+        field: 'isPick',
+        value: true,
+      })
+      .then(() => {
+        setTimeout(() => {
+          self.store.dispatch('not/setNotState', {
+            field: 'isPick',
+            value: false,
+          });
+        }, DESIGN.EFFECT_TIME);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   }
 }

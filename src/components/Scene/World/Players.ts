@@ -1,4 +1,5 @@
 // Types
+import type { Mesh } from 'three';
 import type { ISelf } from '@/models/modules';
 import { IShot, IUnitInfo } from '@/models/api';
 
@@ -41,9 +42,9 @@ export default class Players {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public animate(self: ISelf): void {
+  public animate(self: ISelf, world: Mesh[]): void {
     // Animated modules
-    this._hero.animate(self);
+    this._hero.animate(self, world);
     this._enemies.animate(self);
     this._enemies.animate(self);
   }

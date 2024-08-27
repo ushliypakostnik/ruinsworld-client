@@ -30,6 +30,14 @@ export enum EmitterEvents {
   relocation = 'relocation', // Переход на другую локацию
   onRelocation = 'onRelocation', // На переход на другую локацию
   location = 'location', // Игрок загрузился на локации
+  userDead = 'userDead', // Игрок умер
+
+  door = 'door', // Игрок открыл дверь
+  doors = 'doors', // Нужно обновить двери
+  point = 'point', // Смена флага на контрольной точке
+  dead = 'dead', // Новая мертвая коробка на сцене
+  pick = 'pick', // Пользователь подобрал что-то
+  onPick = 'onPick', // Ответ на подобрал что-то
 }
 
 // Мир
@@ -74,6 +82,12 @@ export interface IBuild {
   rotateX: number;
   rotateY: number;
   rotateZ: number;
+}
+
+export interface IPoint {
+  x: number;
+  z: number;
+  rotateY: number;
 }
 
 export interface IGrassScene {
@@ -169,6 +183,7 @@ export interface IUnit extends IMoveObject {
   isFire: boolean;
   isOnHit: boolean;
   isOnHit2: boolean;
+  exp: number;
 }
 
 export interface IUnitThree extends IUnit {
@@ -195,6 +210,7 @@ export interface IUnitThree extends IUnit {
   isStepsStop: boolean;
   isIdlePlay: boolean;
   isIdleStop: boolean;
+  isSetDead: boolean;
 }
 
 // Оружие
@@ -234,6 +250,7 @@ export interface IModule {
 }
 
 export interface IGameUpdates {
+  point: IPoint;
   users: IUnit[];
   weapon: IWeaponModule;
   npc: IModule,

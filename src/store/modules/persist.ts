@@ -7,6 +7,8 @@ const initialState: IStoreModule = () => ({
   id: null,
   name: null,
   isEnter: false, // Cервер знает имя и расу пользователя?
+  race: 'human', // Раса которую пользователь выбрал последний раз
+  last: null, // Последняя локация на которую заходил игрок
 
   language: null,
   isPause: true, // Сейчас пауза?
@@ -40,6 +42,8 @@ const persist: Module<IStoreModule, IStore> = {
     isTired: (state: IStoreModule) => state.isTired,
     isGameOver: (state: IStoreModule) => state.isGameOver,
     day: (state: IStoreModule) => state.day,
+    race: (state: IStoreModule) => state.race,
+    last: (state: IStoreModule) => state.last,
   },
 
   actions: {

@@ -20,6 +20,7 @@ const initialState: IPreloader = {
   stonesIsLoaded: false,
   // stones2IsLoaded: false,
   grassesIsLoaded: false,
+  pointsIsLoaded: false,
 
   // World build
   skyIsBuild: false,
@@ -28,7 +29,7 @@ const initialState: IPreloader = {
   grassesIsBuild: false,
   stonesIsBuild: false,
   // stones2IsBuild: false,
-  commandIsBuild: false,
+  pointsIsBuild: false,
   atmosphereIsBuild: false,
 };
 

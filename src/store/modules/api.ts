@@ -19,6 +19,7 @@ const initialState: IStoreModule = () => ({
   onHitOthers: { users: [], npc: [] },
   isOnHitOthers: false,
   map: null,
+  exp: 0,
 });
 const initial = initialState;
 
@@ -38,6 +39,7 @@ const api: Module<IStoreModule, IStore> = {
     onHitOthers: (state: IStoreModule) => state.onHitOthers,
     isOnHitOthers: (state: IStoreModule) => state.isOnHitOthers,
     map: (state: IStoreModule) => state.map,
+    exp: (state: IStoreModule) => state.exp,
   },
 
   actions: {

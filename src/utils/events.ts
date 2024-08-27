@@ -56,7 +56,7 @@ export default class Events {
     this.addEventsToBus(this._pause, null, (data) => callback(data));
   }
 
-  // Помощник показа экранных сообщений
+  // Помощник показа коротких экранных сообщений
   public messagesByIdDispatchHelper(
     self: ISelf,
     text: string,
@@ -75,8 +75,23 @@ export default class Events {
     });
   }
 
+  // Помощник показа длинных экранных сообщений
+  public showPermanentMessage(
+    self: ISelf,
+    text: string,
+    delay?: number,
+  ): void {
+    this._pause = delay || DESIGN.MESSAGES_TIMEOUT / 1000;
+
+    self.store
+      .dispatch('not/showPermanentMessage', { id: null, text })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
   public animate(): void {
-    if (!this._clock.running) this.start();
+    if (!this._clock.running) this._clock.start();
 
     this.delta = this._clock.getDelta();
     this._bus.forEach((record) => {
@@ -86,13 +101,5 @@ export default class Events {
         this._removeEventsFromBus(record.id);
       }
     });
-  }
-
-  public pause(): void {
-    if (this._clock.running) this._clock.stop();
-  }
-
-  public start(): void {
-    if (!this._clock.running) this._clock.start();
   }
 }

@@ -47,6 +47,10 @@ export default class Assets {
   public jumpstart!: AudioBuffer;
   public jumpend!: AudioBuffer;
   public dead!: AudioBuffer;
+  public pick!: AudioBuffer;
+
+  // World
+  public door!: AudioBuffer;
 
   // NPC
 
@@ -106,6 +110,13 @@ export default class Assets {
 
     // Позиционированные на объектах
 
+    // World
+    this.audioLoader.load(`./audio/${Audios.door}.mp3`, (buffer) => {
+      self.helper.loaderDispatchHelper(self.store, Audios.door, false);
+      this.door = buffer;
+      self.audio.initAudioByName(self, Audios.door);
+    });
+
     // Weapon
 
     this.audioLoader.load(`./audio/${Audios.explosion}.mp3`, (buffer) => {
@@ -127,6 +138,13 @@ export default class Assets {
     });
 
     // Players
+
+    this.audioLoader.load(`./audio/${Audios.pick}.mp3`, (buffer) => {
+      self.helper.loaderDispatchHelper(self.store, Audios.pick, false);
+      this.pick = buffer;
+
+      self.audio.initAudioByName(self, Audios.pick);
+    });
 
     this.audioLoader.load(`./audio/${Audios.steps}.mp3`, (buffer) => {
       self.helper.loaderDispatchHelper(self.store, Audios.steps, false);
@@ -332,6 +350,7 @@ export default class Assets {
     self.helper.setAudioToHeroHelper(self, Audios.shot, this.shot);
     self.helper.setAudioToHeroHelper(self, Audios.hit, this.hit);
     self.helper.setAudioToHeroHelper(self, Audios.dead, this.dead);
+    self.helper.setAudioToHeroHelper(self, Audios.pick, this.pick);
   }
 
   // Texture utils
@@ -538,6 +557,7 @@ export default class Assets {
       case Audios.shot:
       case Audios.hit:
       case Audios.mutantjumpend:
+      case Audios.pick:
         return 0.8;
       case Audios.cyborghit:
       case Audios.bidensidle:
@@ -555,6 +575,7 @@ export default class Assets {
       case Audios.bidensdead:
       case Audios.bidenshit:
       case Audios.light:
+      case Audios.door:
         return 1;
     }
     return DESIGN.DEFAULT_VOLUME;

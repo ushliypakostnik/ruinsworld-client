@@ -9,7 +9,7 @@ import type { Group, Mesh, Vector3 } from 'three';
 import { DESIGN, Textures } from '@/utils/constants';
 import { EmitterEvents } from '@/models/api';
 
-// Module
+// Utils
 import emitter from '@/utils/emitter';
 import { TResult } from '@/models/utils';
 import Octree from '@/components/Scene/World/Math/Octree';
@@ -25,6 +25,7 @@ export default class Shots {
   private _result!: TResult;
   private _result2!: TResult;
   private _result3!: TResult;
+  private _result4!: TResult;
   private _SIZE = 0.1;
   private _is = false;
   private _time = 0;
@@ -216,6 +217,9 @@ export default class Shots {
               this._result2 = self.octree3.sphereIntersect(
                 new THREE.Sphere(this._shotClone.position, this._SIZE * 5),
               );
+              this._result4 = self.octree4.sphereIntersect(
+                new THREE.Sphere(this._shotClone.position, this._SIZE * 5),
+              );
               this._id = '';
               if (this._result2)
                 this._id = this._findEnemyOnShot(
@@ -223,7 +227,7 @@ export default class Shots {
                   this._shotClone.position,
                   enemies,
                 );
-              if (this._result || this._result2)
+              if (this._result || this._result2 || this._result4)
                 this._explosion(
                   {
                     ...shot,

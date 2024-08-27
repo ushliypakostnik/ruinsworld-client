@@ -16,21 +16,33 @@ import type {
   ILocation,
   ITree,
   IStone,
-  IStone2,
   IGrass,
   IBuild,
   ITreeScene,
-  IGrassScene
+  IGrassScene,
 } from '@/models/api';
+import type { Doors } from '@/models/utils';
 
 // Constants
-import { Colors, Names, Textures, DESIGN } from '@/utils/constants';
+import { EmitterEvents } from '@/models/api';
+import { Audios, Colors, Names, Textures, DESIGN, Races } from '@/utils/constants';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+
+// Services
+import emitter from '@/utils/emitter';
 
 export default class Atmosphere {
   public name = Names.atmosphere;
   public world!: Mesh[];
+  public doors!: Mesh[];
+  public point!: Mesh;
 
+  private _status!: Races.human | Races.reptiloid | null;
+  private _isStatus!: boolean; 
+  private _redFlag!: Mesh[];
+  private _blueFlag!: Mesh[];
+  private _doorsStore!: Mesh[];
+  private _bus!: Doors[];
   private _light!: HemisphereLight;
   private _sun!: DirectionalLight;
   private _skyGeometry!: SphereBufferGeometry;
@@ -60,7 +72,6 @@ export default class Atmosphere {
   private _pseudo!: Mesh;
   private _pseudoClone!: Mesh;
   private _color!: Colors;
-  private _string!: string;
 
   // Освещение - "время суток"
   private _DAY = [
@@ -182,6 +193,14 @@ export default class Atmosphere {
     this._index = self.store.getters['persist/day'];
     this._location = self.store.getters['api/locationData'];
     this.world = [];
+    this.doors = [];
+    this._doorsStore = [];
+    this._redFlag = [];
+    this._blueFlag = [];
+    this._isStatus = false;
+    this._bus = [];
+
+    // console.log('Atmosphere init: ', this._location);
 
     self.store.dispatch('persist/setPersistState', {
       field: 'day',
@@ -365,38 +384,48 @@ export default class Atmosphere {
       },
     );
 
-    // Respauns
-    if ((this._location.x === -3 && this._location.y === -3) ||
-      (this._location.x === 3 && this._location.y === 3)) {
+    // Points
+    self.assets.GLTFLoader.load('./images/models/point.glb', (model: GLTF) => {
+      self.helper.loaderLocationDispatchHelper(self.store, Names.points);
+      this._model = self.assets.traverseHelper(self, model).scene;
 
-      if (this._location.x === -3 && this._location.y === -3) {
-        this._string = 'red';
-      }
-  
-      if (this._location.x === 3 && this._location.y === 3) {
-        this._string = 'blue';
-      }
-
-      // Players
-      self.assets.GLTFLoader.load(`./images/models/command${this._string}.glb`, (model: GLTF) => {
-        this._model = self.assets.traverseHelper(self, model).scene;
-        this._model.position.set(0, -2, 0);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this._model.traverse((child: any) => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (child.isMesh) {
-            // Двери пока убираем
-            if (child.name.includes('door')) child.remove();
-            else {
-              child.castShadow = true;
-              this.world.push(child); 
-            }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this._model.traverse((child: any) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (child.isMesh) {
+          child.castShadow = true;
+          if (child.name.includes('door')) {
+            child.position.y = 1.75;
+            this.doors.push(child);
+            this._doorsStore.push(child);
+          } else if (child.name.includes('player')) {
+            if (child.name.includes('red')) this._redFlag.push(child);
+            else if (child.name.includes('blue')) this._blueFlag.push(child);
+            child.visible = false;
+            this.world.push(child);
+          } else {
+            this.world.push(child);
           }
-        });
-        self.helper.loaderLocationDispatchHelper(self.store, 'command' as Names, true);
+        }
       });
-    } else self.helper.loaderLocationDispatchHelper(self.store,'command' as Names, true);
+
+      this._pseudo = new THREE.Mesh(
+        new THREE.BoxBufferGeometry(2, 10, 2),
+        self.assets.getMaterial(Textures.pseudo),
+      );
+      this._pseudo.position.y = 4;
+      this._pseudo.name = Names.points;
+      this._pseudo.visible = false;
+      self.scene.add(this._pseudo);
+      this.point = this._pseudo;
+
+      self.helper.loaderLocationDispatchHelper(
+        self.store,
+        'points' as Names,
+        true,
+      );
+    });
 
     // Trees
     self.assets.GLTFLoader.load('./images/models/tree.glb', (model: GLTF) => {
@@ -415,7 +444,11 @@ export default class Atmosphere {
 
       this._location.trees.forEach((tree: ITree) => {
         this._modelClone = this._model.clone();
-        this._modelClone.position.set(tree.x, -1 + -1 * tree.scale / 5, tree.z);
+        this._modelClone.position.set(
+          tree.x,
+          -1 + (-1 * tree.scale) / 5,
+          tree.z,
+        );
         this._modelClone.scale.set(tree.scale, tree.scale, tree.scale);
         this._modelClone.rotateX(self.helper.degreesToRadians(tree.rotateX));
         this._modelClone.rotateY(self.helper.degreesToRadians(tree.rotateY));
@@ -489,23 +522,26 @@ export default class Atmosphere {
         // @ts-ignore
         if (child.isMesh) {
           if (child.name.includes(Textures.concrette2))
-            child.material = self.assets.getMaterialWithColor(Textures.concrette2, this._color);
+            child.material = self.assets.getMaterialWithColor(
+              Textures.concrette2,
+              this._color,
+            );
         }
       });
 
       this._pseudo = new THREE.Mesh(
-        new THREE.BoxBufferGeometry(
-          4.5,
-          3.25,
-          6,
-        ),
+        new THREE.BoxBufferGeometry(4.5, 3.25, 6),
         self.assets.getMaterial(Textures.pseudo),
       );
       this._pseudo.visible = false;
 
       this._location.stones.forEach((stone: IStone) => {
         this._modelClone = this._model.clone();
-        this._modelClone.position.set(stone.x, -1 * (3 / stone.scaleY) * stone.scaleY - 1, stone.z);
+        this._modelClone.position.set(
+          stone.x,
+          -1 * (3 / stone.scaleY) * stone.scaleY - 1,
+          stone.z,
+        );
         this._modelClone.scale.set(stone.scaleX, stone.scaleY, stone.scaleZ);
         this._modelClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
@@ -513,9 +549,18 @@ export default class Atmosphere {
 
         this._pseudoClone = this._pseudo.clone();
         this._number = stone.scaleY < 4 ? 1.3 : stone.scaleY > 6 ? 1.2 : 1.1;
-        this._number2 = stone.scaleY > 10 ? 0.65 : stone.scaleY > 7 ? 0.75 : 0.85;
-        this._pseudoClone.position.set(stone.x, -1 * (3 / stone.scaleY) * stone.scaleY - 1, stone.z);
-        this._pseudoClone.scale.set(stone.scaleX * this._number, stone.scaleY * this._number2, stone.scaleZ * this._number);
+        this._number2 =
+          stone.scaleY > 10 ? 0.65 : stone.scaleY > 7 ? 0.75 : 0.85;
+        this._pseudoClone.position.set(
+          stone.x,
+          -1 * (3 / stone.scaleY) * stone.scaleY - 1,
+          stone.z,
+        );
+        this._pseudoClone.scale.set(
+          stone.scaleX * this._number,
+          stone.scaleY * this._number2,
+          stone.scaleZ * this._number,
+        );
         this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
         this.world.push(this._pseudoClone);
@@ -526,56 +571,59 @@ export default class Atmosphere {
     });
 
     // Stones 2
-    self.assets.GLTFLoader.load('./images/models/stones2--1.glb', (model: GLTF) => {
-      self.helper.loaderLocationDispatchHelper(self.store, Names.stones2);
+    /*
+    self.assets.GLTFLoader.load(
+      './images/models/stones2--1.glb',
+      (model: GLTF) => {
+        self.helper.loaderLocationDispatchHelper(self.store, Names.stones2);
 
-      if (this._location.x === 0 || this._location.y === 0) {
-        this._color = Colors.concrette;
-      } else if (this._location.x > 0 && this._location.y < 0) {
-        this._color = Colors.stones;
-      } else if (this._location.x > 0 && this._location.y > 0) {
-        this._color = Colors.stones2;
-      } else if (this._location.x < 0 && this._location.y > 0) {
-        this._color = Colors.stones4;
-      } else if (this._location.x < 0 && this._location.y < 0) {
-        this._color = Colors.stones3;
-      }
-
-      this._model = model.scene;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this._model.traverse((child: any) => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (child.isMesh) {
-          child.material = self.assets.getMaterialWithColor(Textures.concrette2, this._color);
+        if (this._location.x === 0 || this._location.y === 0) {
+          this._color = Colors.concrette;
+        } else if (this._location.x > 0 && this._location.y < 0) {
+          this._color = Colors.stones;
+        } else if (this._location.x > 0 && this._location.y > 0) {
+          this._color = Colors.stones2;
+        } else if (this._location.x < 0 && this._location.y > 0) {
+          this._color = Colors.stones4;
+        } else if (this._location.x < 0 && this._location.y < 0) {
+          this._color = Colors.stones3;
         }
-      });
 
-      this._pseudo = new THREE.Mesh(
-        new THREE.BoxBufferGeometry(
-          1,
-          3,
-          1,
-        ),
-        self.assets.getMaterial(Textures.pseudo),
-      );
-      // this._pseudo.visible = false;
+        this._model = model.scene;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this._model.traverse((child: any) => {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          if (child.isMesh) {
+            child.material = self.assets.getMaterialWithColor(
+              Textures.concrette2,
+              this._color,
+            );
+          }
+        });
 
-      this._location.stones2.forEach((stone: IStone) => {
-        this._addStone(self, stone);
-      });
+        this._pseudo = new THREE.Mesh(
+          new THREE.BoxBufferGeometry(1, 3, 1),
+          self.assets.getMaterial(Textures.pseudo),
+        );
+        // this._pseudo.visible = false;
 
-      self.helper.loaderLocationDispatchHelper(self.store, Names.stones2, true);
-    });
+        this._location.stones2.forEach((stone: IStone) => {
+          this._addStone(self, stone);
+        });
+
+        self.helper.loaderLocationDispatchHelper(
+          self.store,
+          Names.stones2,
+          true,
+        );
+      },
+    ); */
 
     // Builds
     this._location.builds.forEach((build: IBuild) => {
       this._pseudoClone = new THREE.Mesh(
-        new THREE.BoxBufferGeometry(
-          build.scale,
-          build.scaleY,
-          build.scale,
-        ),
+        new THREE.BoxBufferGeometry(build.scale, build.scaleY, build.scale),
         self.assets.getMaterial(Textures.concrette),
       );
       this._pseudoClone.position.set(build.x, build.scaleY * 0.25, build.z);
@@ -585,11 +633,12 @@ export default class Atmosphere {
 
       this.world.push(this._pseudoClone);
       self.scene.add(this._pseudoClone);
-    });  
+    });
 
     self.helper.loaderLocationDispatchHelper(self.store, this.name, true);
   }
 
+  /*
   private _addStone(self: ISelf, stone: IStone) {
     this._modelClone = this._model.clone();
     this._modelClone.position.set(stone.x, stone.scaleY / -2, stone.z);
@@ -600,12 +649,16 @@ export default class Atmosphere {
 
     this._pseudoClone = this._pseudo.clone();
     this._pseudoClone.position.set(stone.x, stone.scaleY / 6, stone.z);
-    this._pseudoClone.scale.set(stone.scaleX * 2, stone.scaleY, stone.scaleZ * 2);
+    this._pseudoClone.scale.set(
+      stone.scaleX * 2,
+      stone.scaleY,
+      stone.scaleZ * 2,
+    );
     this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
     this.world.push(this._pseudoClone);
     self.scene.add(this._pseudoClone);
-  }
+  } */
 
   private _setRandom(self: ISelf) {
     this._randomX = self.helper.randomInteger(1, 5);
@@ -617,10 +670,44 @@ export default class Atmosphere {
     });
   }
 
+  private setFlag(self: ISelf) {
+    if (this._status === Races.human) {
+      this._redFlag.forEach((mesh) => {
+        mesh.visible = true;
+      });
+      this._blueFlag.forEach((mesh) => {
+        mesh.visible = false;
+      });
+    } else if (this._status === Races.reptiloid) {
+      this._redFlag.forEach((mesh) => {
+        mesh.visible = false;
+      });
+      this._blueFlag.forEach((mesh) => {
+        mesh.visible = true;
+      });
+    } else {
+      this._redFlag.forEach((mesh) => {
+        mesh.visible = false;
+      });
+      this._blueFlag.forEach((mesh) => {
+        mesh.visible = false;
+      });
+    }
+  }
+
   public animate(self: ISelf): void {
     this._time += self.events.delta;
 
     if (this._sky) this._sky.rotateY(self.events.delta / 25);
+
+    if (!this._isStatus) {
+      this._isStatus = true;
+      this._status = self.store.getters['api/game'].point.status;
+      this.setFlag(self);
+    } if (self.store.getters['api/game'].point.status !== this._status) {
+      this._status = self.store.getters['api/game'].point.status;
+      this.setFlag(self);
+    }
 
     if (this._trees.length) {
       if (this._time > 1) {
@@ -669,5 +756,88 @@ export default class Atmosphere {
         tree.model2.rotateZ(self.helper.degreesToRadians(this._rotateZ / -2));
       });
     }
+
+    // Двери
+    this._bus.forEach((door) => {
+      this._mesh = self.scene.getObjectByProperty(
+        'uuid',
+        door.id,
+      ) as THREE.Mesh;
+      if (this._mesh) {
+        door.time += self.events.delta;
+
+        // Направление движения
+        if (door.isOpen || door.isClose) {
+          if (door.isOpen) {
+            if (door.direction) this._number = -1;
+            else this._number = 1;
+          } else if (door.isClose) {
+            if (door.direction) this._number = 1;
+            else this._number = -1;
+          }
+
+          this._mesh.position.y += this._number * self.events.delta * 5;
+          door.distance += self.events.delta * 5;
+        }
+
+        if (door.isOpen) {
+          // Останавливаем дверь
+          if (door.distance >= 5) {
+            door.isOpen = false;
+            door.isPause = true;
+            door.distance = 0;
+            this.doors = this._doorsStore.filter(
+              (door) => door.uuid !== this._mesh.uuid,
+            );
+            emitter.emit(EmitterEvents.doors); // обновляем
+          }
+        }
+
+        // Закрываем дверь
+        if (door.isPause && door.time > 3) {
+          door.isPause = false;
+          door.isClose = true;
+          self.audio.replayObjectSound(door.id, Audios.door);
+
+          // Ну вот такое!!! (я пока не смог понять почему)
+          setTimeout(() => {
+            this.doors = this._doorsStore;
+            emitter.emit(EmitterEvents.doors); // обновляем
+          }, 100);
+        }
+
+        // Закрытие двери
+        if (door.isClose) {
+          // Останавливаем дверь
+          if (door.distance >= 5) {
+            this._mesh.position.y = 1.75;
+            this._bus = this._bus.filter((item) => item.id !== door.id);
+            this.doors = this._doorsStore;
+            emitter.emit(EmitterEvents.doors); // обновляем
+          }
+        }
+      }
+    });
+  }
+
+  // На открытие двери
+  public door(self: ISelf, id: string): boolean {
+    if (!this._bus.find((door) => door.id === id)) {
+      this._bus.push({
+        id,
+        isOpen: true,
+        isPause: false,
+        isClose: false,
+        direction: false,
+        distance: 0,
+        time: 0,
+      } as Doors);
+      this._mesh = self.scene.getObjectByProperty('uuid', id) as THREE.Mesh;
+      if (this._mesh) {
+        self.audio.replayObjectSound(id, Audios.door);
+      }
+      return true;
+    }
+    return false;
   }
 }

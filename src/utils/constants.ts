@@ -44,12 +44,18 @@ export enum Names {
   stones2 = 'stones2',
   grasses = 'grasses',
   hills = 'hills',
+  points = 'points',
 }
 
 export enum Modes {
   idle = 'idle',
   active = 'active',
   dead = 'dead',
+}
+
+export enum Pick {
+  dead = 'dead',
+  thing = 'thing',
 }
 
 export enum Animations {
@@ -116,6 +122,7 @@ export enum Textures {
 export enum Audios {
   // World
   wind = 'wind',
+  door = 'door',
 
   // Players
   steps = 'steps',
@@ -124,6 +131,7 @@ export enum Audios {
   shot = 'shot',
   hit = 'hit',
   dead = 'dead',
+  pick = 'pick',
 
   // Weapon
   explosion = 'explosion',
@@ -224,7 +232,7 @@ export const DESIGN: TConfig = {
   MESSAGES_TIMEOUT: 3000, // ms
   DEFAULT_VOLUME: 0.3,
   GAMEPLAY: {
-    PLAYER_SPEED: 60,
+    PLAYER_SPEED: 40,
     PLAYER_HEIGHT: 2,
     JUMP: 20,
     GRAVITY: 40,
@@ -238,6 +246,7 @@ export const DESIGN: TConfig = {
     { x: -1, y: -1 },
   ],
   UPDATE_TIME: 400,
+  EFFECT_TIME: 1500,
 };
 
 // Игровые расы
@@ -312,7 +321,6 @@ export const MESSAGES: TMessages = {
       'In order to play, open in the Google Chrome (or Yandex) browser (Firefox not recommended)',
     startbutton: 'Play',
     restartbutton: 'Restart',
-
     control1: 'Shot: Left mouse button',
     control2: 'Move: WASD',
     control3: 'Jump: Space + WASD',
@@ -323,8 +331,9 @@ export const MESSAGES: TMessages = {
     control8: 'Optical sight: Right mouse button',
     control9: 'Map: M',
     control10: 'Menu: P',
-
+    control11: 'Action: E',
     copyright: '© Levon Gambaryan Bro Games',
+    gameover: 'Game Over',
 
     hiddenMoveEnabled: 'You move in stealth mode',
     hiddenMoveDisabled: 'Stealth mode disabled',
@@ -333,7 +342,11 @@ export const MESSAGES: TMessages = {
     exitOn: 'You are at the exit from the location!',
     exitOff: 'Exit from a location far away',
 
-    gameover: 'Game Over',
+    door: 'Press E to open the door',
+    point: 'Raise your race\'s flag at the control station?',
+    pointStart: 'The flag cannot be changed at this point!',
+    pointGood: 'The point already belongs to your race!',
+    pick: 'Pick: ',
 
     [Races.human]: 'Russian',
     [Races.reptiloid]: 'Reptiloid',
@@ -355,7 +368,6 @@ export const MESSAGES: TMessages = {
       'Для того чтобы играть откройте в браузере Google Chrome (или Яндекс), Firefox не рекомендуется',
     startbutton: 'Играть',
     restartbutton: 'Cначала',
-
     control1: 'Выстрел: Левая кнопка мыши',
     control2: 'Движение: WASD',
     control3: 'Прыжок: Space + WASD',
@@ -366,8 +378,9 @@ export const MESSAGES: TMessages = {
     control8: 'Оптический прицел: Правая кнопка мыши',
     control9: 'Карта: M',
     control10: 'Меню: P',
-
+    control11: 'Действие: E',
     copyright: '© Levon Gambaryan Bro Games',
+    gameover: 'Проиграл',
 
     hiddenMoveEnabled: 'Вы двигаетесь в скрытном режиме',
     hiddenMoveDisabled: 'Скрытный режим отключен',
@@ -376,7 +389,11 @@ export const MESSAGES: TMessages = {
     exitOn: 'Вы на выходе с локации!',
     exitOff: 'Выход с локации далеко',
 
-    gameover: 'Проиграл',
+    door: 'Нажмите E для того чтобы открыть дверь',
+    point: 'Поднять флаг своей расы на контрольной точке?',
+    pointStart: 'На этой точке нельзя поменять флаг!',
+    pointGood: 'Точка уже принадлежит вашей расе!',
+    pick: 'Подобрать: ',
 
     [Races.human]: 'Выживший',
     [Races.reptiloid]: 'Рептилоид',

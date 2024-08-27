@@ -20,6 +20,12 @@
               } * 2.1vh); top: calc(${item.y + Math.floor(Math.sqrt(map.locations.length) / 2)
               } * 2.1vh);`"
           >
+            <div
+              class="map__location-inner"
+              :class="{
+                'map__location-inner--red': item.status === 'human',
+                'map__location-inner--blue': item.status === 'reptiloid',
+              }" />
           </div>
         </div>
 
@@ -134,7 +140,22 @@ $point($s)
     background rgba($colors.stone, 0.5)
 
   &__location--this
-    background $colors.stone
+    background rgba($colors.stone, 0.75)
+
+  &__location-inner
+    position absolute
+    width 100%
+    height 100%
+    left 0
+    right 0
+    top 0
+    bottom 0
+
+  &__location-inner--red
+    background rgba($colors.bird, 0.5)
+
+  &__location-inner--blue
+    background rgba($colors.wood, 0.5)
 
   &__scene
     position relative

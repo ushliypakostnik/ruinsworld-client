@@ -43,6 +43,8 @@ export default defineComponent({
     const language = computed(() => store.getters['persist/language']);
 
     const changeLanguage = (value: TLanguage): void => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       locale.value = value;
       store.dispatch('persist/setPersistState', { field: 'language', value });
     };

@@ -77,6 +77,7 @@
           />
         </div>
 
+        <div v-if="isPick" class="layout__overlay layout__overlay--light effect" />
         <div class="layout__overlay layout__overlay--dark" :key="keyHealth" :style="` opacity: ${(health >= 0 ? (100 - health) / 200 : 0.5)}`" />
         <div class="layout__overlay layout__overlay--hit" :key="keyHealth" :style="` opacity: ${(health >= 0 ? (100 - health) / 200 : 0.5)}`" />
         <div
@@ -90,6 +91,14 @@
         <transition-group name="fade2" tag="ul" class="layout__messages">
           <li
             class="layout__message"
+            v-if="message"
+          >
+            {{ $t(`${message}`) }}
+            <span v-if="content">{{ $t(`${content}`) }}</span>
+          </li>
+
+          <li
+            class="layout__message"
             v-for="(message, index) in messages"
             :key="`message${index}`"
           >
@@ -97,10 +106,10 @@
           </li>
         </transition-group>
 
+        <div class="layout__name">{{ name }}/{{ exp }}</div>
         <div class="layout__location">
           {{ locationData && locationData.name[language] }}
         </div>
-        <div class="layout__name">{{ name }}</div>
 
         <Map class="layout__map" v-if="isMap && !isReload" />
 
@@ -148,6 +157,7 @@
               <div class="layout__keys">{{ $t('control8') }}</div>
               <div class="layout__keys">{{ $t('control9') }}</div>
               <div class="layout__keys">{{ $t('control10') }}</div>
+              <div class="layout__keys">{{ $t('control11') }}</div>
             </div>
             <div class="layout__copy">{{ $t('copyright') }}</div>
           </div>
@@ -207,7 +217,6 @@ export default defineComponent({
     let isDesktop: Ref<boolean> = ref(false);
     let nickname: Ref<string> = ref('');
     let keyHealth: Ref<number> = ref(0);
-    let select: Ref<string> = ref('human');
     let isFirts: Ref<boolean> = ref(false);
     const isBro = ScreenHelper.isBro();
     let onWindowResize: () => void;
@@ -232,7 +241,13 @@ export default defineComponent({
     const isOptical = computed(() => store.getters['not/isOptical']);
     const isMap = computed(() => store.getters['not/isMap']);
     const messages = computed(() => store.getters['not/messages']);
+    const message = computed(() => store.getters['not/message']);
+    const content = computed(() => store.getters['not/content']);
     const language = computed(() => store.getters['persist/language']);
+    const select = computed(() => store.getters['persist/race']);
+    const last = computed(() => store.getters['persist/last']);
+    const isPick = computed(() => store.getters['not/isPick']);
+    const exp = computed(() => store.getters['api/exp']);
 
     onMounted(() => {
       onWindowResize();
@@ -249,8 +264,13 @@ export default defineComponent({
 
     reenter = () => {
       beep();
-      emitter.emit(EmitterEvents.reenter);
-      restartDispatchHelper(store);
+      store.dispatch('persist/setPersistState', {
+        field: 'last',
+        value: locationData.value.id,
+      }).then(() => {
+        emitter.emit(EmitterEvents.reenter);
+        restartDispatchHelper(store);
+      });
     };
 
     enter = () => {
@@ -258,6 +278,7 @@ export default defineComponent({
       emitter.emit(EmitterEvents.enter, {
         name: nickname.value,
         race: select.value,
+        location: last.value,
       });
       store.dispatch('persist/setPersistState', {
         field: 'name',
@@ -273,7 +294,10 @@ export default defineComponent({
     };
 
     setRace = (value) => {
-      select.value = value;
+      store.dispatch('persist/setPersistState', {
+        field: 'race',
+        value,
+      });
       beep();
     };
 
@@ -344,6 +368,8 @@ export default defineComponent({
       name,
       endurance,
       messages,
+      message,
+      content,
       play,
       enter,
       reenter,
@@ -355,6 +381,8 @@ export default defineComponent({
       isMap,
       language,
       keyHealth,
+      isPick,
+      exp,
     };
   },
 });
@@ -428,8 +456,8 @@ $noactive
 
   &__header
     color $colors.sea
-    margin-top 7vh
-    margin-bottom 4vh
+    margin-top 5vh
+    margin-bottom 2vh
     $text("olga")
 
   &__enter
@@ -460,7 +488,7 @@ $noactive
     width 15vw
     padding-left 10px
     padding-right 10px
-    margin-bottom 2vh
+    margin-bottom 1vh
     color $colors.sea
     border 4px solid $colors.sea
     background transparent
@@ -478,6 +506,9 @@ $noactive
     
     &--hit
       background $colors.hit
+
+    &--light
+      background $colors.stone
 
   &__effect
     @extend $viewport
@@ -530,13 +561,14 @@ $noactive
     position absolute
     right 10px
     color $colors.stone
-    $text("maria")
 
   &__location
     top 10px
+    $text("maria")
 
   &__name
-    top 30px
+    top 40px
+    $text("alina")
 
   &__blocker
     @extend $viewport
@@ -554,17 +586,20 @@ $noactive
 
   &__button
     @extend $button
-    margin-top $gutter * 1.5
+    margin-top $gutter
 
     &--disabled
       pointer-events none
       opacity 0.5
 
     &--enter
-      margin-bottom 3vh
+      margin-bottom 0.5vh
 
     &--dead
       @extend $button--variant
+
+  &__help
+    margin-top $gutter
 
   &__keys,
   &__copy
@@ -573,7 +608,7 @@ $noactive
     $text("nina")
 
   &__copy
-    margin-top $gutter * 1.5
+    margin-top $gutter
 
   &__scales
     position absolute

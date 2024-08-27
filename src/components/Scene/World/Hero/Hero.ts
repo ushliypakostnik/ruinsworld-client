@@ -1,14 +1,31 @@
 import * as THREE from 'three';
 
 // Types
-import type { Clock, Group, Object3D, PointLight, Vector3, Mesh } from 'three';
+import type {
+  Clock,
+  Group,
+  Object3D,
+  PointLight,
+  Vector3,
+  Mesh,
+  Raycaster,
+  Intersection,
+} from 'three';
 import type { ISelf } from '@/models/modules';
-import type { IShot } from '@/models/api';
+import type { IShot, ILocation } from '@/models/api';
 import type { TResult } from '@/models/utils';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // Constants
-import { Names, Audios, Colors, Animations, DESIGN, Textures } from '@/utils/constants';
+import {
+  Pick,
+  Names,
+  Audios,
+  Colors,
+  Animations,
+  DESIGN,
+  Textures,
+} from '@/utils/constants';
 import { EmitterEvents } from '@/models/api';
 
 // Utils
@@ -21,6 +38,8 @@ import { relocationDispatchHelper } from '@/utils/utils';
 export default class Hero {
   public name = Names.hero;
 
+  private _intersection!: Intersection;
+  private _raycaster!: Raycaster;
   private _collider!: Capsule;
   private _position: Vector3;
   private _number!: number;
@@ -30,7 +49,6 @@ export default class Hero {
   private _isOnFloor: boolean;
   private _speed!: number;
   private _result!: TResult;
-  private _result2!: TResult;
   private _jumpStart!: number;
   private _jumpFinish!: number;
   private _toruch!: PointLight;
@@ -72,6 +90,9 @@ export default class Hero {
   private _isExit = false;
   private _pseudo!: Mesh;
   private _health!: number;
+  private _location!: ILocation;
+  private _strings: string[];
+  private _noEvent: boolean;
 
   // Animations
   private _animation!: string;
@@ -106,10 +127,19 @@ export default class Hero {
     this._weaponVelocity = new THREE.Vector3();
     this._weaponUpVelocity = new THREE.Vector3();
     this._enduranceClock = new THREE.Clock();
+    this._strings = [];
+    this._noEvent = false;
   }
 
   public init(self: ISelf): void {
     console.log('Hero init');
+
+    this._raycaster = new THREE.Raycaster(
+      new THREE.Vector3(),
+      new THREE.Vector3(0, 0, -1),
+      0,
+      3,
+    );
 
     self.assets.GLTFLoader.load(
       './images/models/weapon--hero.glb',
@@ -309,18 +339,18 @@ export default class Hero {
   // Выстрел
   public shot(self: ISelf): IShot | null {
     // Скорость стрельбы
-    if (this._shotTime > 0.2) {
+    if (this._shotTime > 1.5) {
       this._shotTime = 0;
 
       self.audio.replayHeroSound(Audios.shot);
       this._isOptical = self.store.getters['not/isOptical'];
-  
+
       // Update fire
       this._isFire = true;
       this._isFireOff = false;
       this._fireScale = 0;
       this._toggleFire(this._isOptical);
-  
+
       // recoil
       if (this._isOptical)
         this._velocity.add(
@@ -335,7 +365,9 @@ export default class Hero {
             .multiplyScalar(-1 * 30 * self.events.delta),
         );
       this._weaponVelocity.add(
-        self.helper.getForwardVector(self).multiplyScalar(-1 * self.events.delta),
+        self.helper
+          .getForwardVector(self)
+          .multiplyScalar(-1 * self.events.delta),
       );
       this._weaponUpVelocity.add(
         self.camera
@@ -343,9 +375,9 @@ export default class Hero {
           .normalize()
           .multiplyScalar(-1 * self.events.delta),
       );
-  
+
       this._directionShot = this._direction.negate().normalize();
-  
+
       this._position = this._isOptical
         ? this._optical.position
         : this._weapon.position;
@@ -359,7 +391,7 @@ export default class Hero {
         this._isNotJump || this._jumpStart - this._collider.end.y < 1.5
           ? this._position.y
           : this._position.y - 1.5;
-  
+
       return {
         id: null,
         player: self.store.getters['persist/id'],
@@ -375,7 +407,7 @@ export default class Hero {
         directionY: this._directionShot.y,
         directionZ: this._directionShot.z,
         directionW: 0,
-        time: self.helper.getUnixtime(new Date),
+        time: self.helper.getUnixtime(new Date()),
       };
     }
     return null;
@@ -394,6 +426,7 @@ export default class Hero {
   }
 
   private _playerCollitions(self: ISelf): void {
+    // Мир
     if (self.octree) {
       this._result = self.octree.capsuleIntersect(this._collider);
       this._isOnFloor = false;
@@ -433,12 +466,24 @@ export default class Hero {
       this._isNotJump = this._isOnFloor;
     }
 
-    if (self.octree2) {
-      this._result2 = self.octree2.capsuleIntersect(this._collider);
+    // Двери
+    if (self.octree4) {
+      this._result = self.octree4.capsuleIntersect(this._collider);
 
-      if (this._result2) {
+      if (this._result) {
         this._collider.translate(
-          this._result2.normal.multiplyScalar(this._result2.depth),
+          this._result.normal.multiplyScalar(this._result.depth),
+        );
+      }
+    }
+
+    // Персонажи
+    if (self.octree2) {
+      this._result = self.octree2.capsuleIntersect(this._collider);
+
+      if (this._result) {
+        this._collider.translate(
+          this._result.normal.multiplyScalar(this._result.depth),
         );
       }
     }
@@ -503,7 +548,7 @@ export default class Hero {
     }
   }
 
-  public animate(self: ISelf): void {
+  public animate(self: ISelf, world: Mesh[]): void {
     this._shotTime += self.events.delta; // Продвигаем задержку выстрелов
 
     if (!this._isEnter) this._isEnter = self.store.getters['persist/isEnter'];
@@ -517,6 +562,7 @@ export default class Hero {
       this._isOnBodyHit = self.store.getters['api/isOnBodyHit'];
       this._isGameOver = self.store.getters['persist/isGameOver'];
       this._health = self.store.getters['api/health'];
+      this._location = self.store.getters['api/locationData'];
 
       if (this._isOnHit !== this._isOnHitStore) {
         if (this._isOnHit && this._isOnBodyHit)
@@ -688,6 +734,10 @@ export default class Hero {
         if (!this._isDead) {
           self.audio.startHeroSound(Audios.dead);
           this._isDead = true;
+          emitter.emit(EmitterEvents.userDead, {
+            id: self.store.getters['persist/id'],
+            location: self.store.getters['api/location'],
+          });
         }
       } else {
         if (!this._isHide && this._isOnHit) this._animation = this._hit;
@@ -723,8 +773,7 @@ export default class Hero {
 
         self.camera.position.set(
           this._collider.end.x,
-          this._collider.end.y -
-            (!this._isHide ? 0 : 1.5),
+          this._collider.end.y - (!this._isHide ? 0 : 1.5),
           this._collider.end.z,
         );
 
@@ -752,6 +801,75 @@ export default class Hero {
 
         this._animateWeapon(self);
 
+        // Raycasting
+
+        // Doors
+        this._direction = self.camera.getWorldDirection(this._direction);
+        this._raycaster.set(
+          self.camera.getWorldPosition(self.camera.position),
+          this._direction,
+        );
+        if (this._raycaster.intersectObjects(world).length > 0) {
+          this._intersection = this._raycaster.intersectObjects(world)[0];
+
+          if (this._intersection && this._intersection.distance < 10) {
+            if (this._intersection.object.name.includes('door')) {
+              self.store.dispatch('not/showPermanentMessage', 'door');
+              if (self.keys['KeyE'])
+                emitter.emit(
+                  EmitterEvents.door,
+                  this._intersection.object.uuid,
+                );
+            } else if (this._intersection.object.name.includes('points')) {
+              if (
+                (this._location.x === -3 && this._location.y === -3) ||
+                (this._location.x === 3 && this._location.y === 3)
+              ) {
+                self.store.dispatch('not/showPermanentMessage', 'pointStart');
+              } else if (
+                !self.store.getters['api/game'].point.status ||
+                self.store.getters['api/game'].point.status !==
+                  self.store.getters['persist/race']
+              ) {
+                self.store.dispatch('not/showPermanentMessage', 'point');
+                if (self.keys['KeyE']) {
+                  emitter.emit(
+                    EmitterEvents.point,
+                    this._intersection.object.uuid,
+                  );
+                  self.helper.pickDispatchHelper(self);
+                }
+              } else {
+                self.store.dispatch('not/showPermanentMessage', 'pointGood');
+              }
+            } else if (this._intersection.object.name.includes('NPC')) {
+              this._strings = this._intersection.object.name.split(' ');
+              self.store.dispatch('not/showPermanentMessageWithContent', {
+                message: 'pick',
+                content: this._strings[1],
+              });
+              if (self.keys['KeyE']) {
+                if (!this._noEvent) {
+                  emitter.emit(EmitterEvents.pick, {
+                    type: Pick.dead,
+                    id: this._strings[0],
+                    uuid: this._intersection.object.uuid,
+                    location: this._location.id,
+                    text: this._strings[1],
+                    user: self.store.getters['persist/id'],
+                  });
+                  this._noEvent = true;
+                  setTimeout(() => {
+                    this._noEvent = false;
+                  }, 500);
+                  self.helper.pickDispatchHelper(self);
+                }
+              }
+            }
+          }
+        } else self.store.dispatch('not/hidePermanentMessage'); // Прячем постоянное сообщение
+
+        // Проверяем позицию игрока на локации
         this._time += self.events.delta;
         if (this._time > 1) {
           this._checkPosition(self);
@@ -841,8 +959,8 @@ export default class Hero {
     return this._stand;
   }
 
-    // Скорость
-    private _getSpeed(health: number) {
-      return (health < 25 ? 0.125 : health / 200) * DESIGN.GAMEPLAY.PLAYER_SPEED;
-    }
+  // Скорость
+  private _getSpeed(health: number) {
+    return (health < 25 ? 0.125 : health / 200) * DESIGN.GAMEPLAY.PLAYER_SPEED;
+  }
 }

@@ -16,7 +16,11 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import type { ISelf } from '@/models/modules';
 import type { IUnit, IUnitThree, IUnitInfo } from '@/models/api';
 
+// Services
+import emitter from '@/utils/emitter';
+
 // Constants
+import { EmitterEvents } from '@/models/api';
 import { Audios, Animations, Names, Textures, Races, RacesConfig, Lifecycle } from '@/utils/constants';
 
 export default class NPC {
@@ -237,6 +241,7 @@ export default class NPC {
       ),
       self.assets.getMaterial(Textures.pseudo),
     );
+    this._pseudoClone.name = `${unit.id} ${unit.race}`;
     this._pseudoClone.visible = Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
 
     this._soundClone = this._sound.clone();
@@ -256,7 +261,6 @@ export default class NPC {
     if (unit.animation === 'dead') {
       this._modelClone.rotation.y = unit.directionY;
       this._pseudoClone.rotation.y = unit.directionY;
-      this._setDeadPseudo(self, unit, this._pseudoClone, this._box.y);
     } else {
       this._pseudoClone.quaternion.copy(this._modelClone.quaternion);
       this._pseudoClone.position.set(
@@ -317,13 +321,18 @@ export default class NPC {
       isStepsStop: false,
       isIdlePlay: false,
       isIdleStop: false,
+      isSetDead: unit.animation === 'dead',
     };
     this._npcThree.prevAction.play();
     self.scene.add(this._modelClone);
     self.scene.add(this._pseudoClone);
     self.scene.add(this._soundClone);
     if (RacesConfig[unit.race].isWeapon) self.scene.add(this._weaponClone);
-    if (unit.animation !== 'dead') self.scene.add(this._scaleClone);
+    if (unit.animation !== 'dead') {
+      self.scene.add(this._scaleClone);
+    } else {
+      this._setDeadPseudo(self, unit, this._pseudoClone, this._box.y);
+    }
 
     // Добавляем звуки
     if (this._soundClone) this._setSounds(self, this._npcThree);
@@ -372,7 +381,7 @@ export default class NPC {
   }
 
   private _animateNPC(self: ISelf, unit: IUnitThree, info: IUnit): void {
-    // Для все кроме окончательно умерших - сдвигаем объекты по данным
+    // Для всех кроме окончательно умерших - сдвигаем объекты по данным
     if (!unit.isDead) {
       this._box = RacesConfig[unit.race].box;
       unit.positionX = info.positionX;
@@ -442,13 +451,16 @@ export default class NPC {
         ) as Mesh;
         if (this._pseudoClone) {
           if (unit.animation === 'dead') {
-            this._setDeadPseudo(self, unit, this._pseudoClone, this._box.y);
-            if (RacesConfig[unit.race].isWeapon) {
-              this._weaponClone = self.scene.getObjectByProperty(
-                'uuid',
-                unit.weapon,
-              ) as Group;
-              if (this._weaponClone.visible) this._weaponClone.visible = false;
+            if (!unit.isSetDead) {
+              unit.isSetDead = true;
+              this._setDeadPseudo(self, unit, this._pseudoClone, this._box.y);
+              if (RacesConfig[unit.race].isWeapon) {
+                this._weaponClone = self.scene.getObjectByProperty(
+                  'uuid',
+                  unit.weapon,
+                ) as Group;
+                if (this._weaponClone.visible) this._weaponClone.visible = false;
+              }
             }
           } else {
             this._pseudoClone.quaternion.copy(this._modelClone.quaternion);
@@ -1344,5 +1356,7 @@ export default class NPC {
         );
         break;
     }
+
+    emitter.emit(EmitterEvents.dead, { id: unit.id, mesh: box.uuid });
   }
 }

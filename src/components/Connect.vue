@@ -88,6 +88,11 @@ export default {
       // console.log('Connect sockets onRelocation', id);
       emitter.emit(EmitterEvents.onRelocation, id);
     },
+
+    onPick: (id) => {
+      // console.log('Connect sockets onPick', id);
+      emitter.emit(EmitterEvents.onPick, id);
+    },
   },
 
   computed: {
@@ -98,6 +103,7 @@ export default {
 
       id: 'persist/id',
       name: 'persist/name',
+      race: 'persist/race',
       isHide: 'persist/isHide',
       isRun: 'persist/isRun',
       isPause: 'persist/isPause',
@@ -136,6 +142,7 @@ export default {
         id: this.id,
         name: message.name,
         race: message.race,
+        location: message.location,
       });
     });
 
@@ -214,8 +221,26 @@ export default {
 
     // Игрок загрузился на локации
     this.emitter.on(EmitterEvents.location, () => {
-      console.log('Connect created location');
+      // console.log('Connect created location');
       this.$socket.emit(EmitterEvents.location, this.id);
+    });
+
+    // Игрок поставил флаг на контрольной точке
+    this.emitter.on(EmitterEvents.point, () => {
+      // console.log('Connect created point', this.race, this.location);
+      this.$socket.emit(EmitterEvents.point, { id: this.location, race: this.race });
+    });
+
+    // Игрок подобрал что-то
+    this.emitter.on(EmitterEvents.pick, (payload) => {
+      // console.log('Connect created pick', payload);
+      this.$socket.emit(EmitterEvents.pick, payload);
+    });
+
+    // Игрок умер
+    this.emitter.on(EmitterEvents.userDead, (payload) => {
+      // console.log('Connect created userDead', payload);
+      this.$socket.emit(EmitterEvents.userDead, payload);
     });
   },
 
@@ -257,7 +282,12 @@ export default {
           this.setApiState({
             field: 'health',
             value: player.health,
-          })
+          }).then(() => {
+            this.setApiState({
+              field: 'exp',
+              value: player.exp,
+            });
+          });
         });
       }
     },
@@ -357,7 +387,7 @@ export default {
 
     // Взрыв
     explosion(message) {
-      console.log('Connect explosion()', message);
+      // console.log('Connect explosion()', message);
       this.$socket.emit(EmitterEvents.explosion, message);
     },
 
@@ -447,7 +477,7 @@ export default {
 
     // На самоповреждение
     onOnSelfharm(message) {
-      console.log('Connect onOnSelfharm()', message, this.id);
+      // console.log('Connect onOnSelfharm()', message, this.id);
       if (message.id === this.id) {
         this.setApiState({
           field: 'health',
