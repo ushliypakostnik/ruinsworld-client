@@ -7,6 +7,7 @@ import { DESIGN } from '@/utils/constants';
 // Types
 import type { ISelf } from '@/models/modules';
 import type { TEvents, TEventsData } from '@/models/utils';
+import type { ISendMessage } from '@/models/api';
 import { Clock } from 'three';
 
 export default class Events {
@@ -56,19 +57,46 @@ export default class Events {
     this.addEventsToBus(this._pause, null, (data) => callback(data));
   }
 
+  private _beep(): void {
+    const ctx = new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = new GainNode(ctx, {
+      gain: 0.1,
+    });
+    oscillator.frequency.value = 330;
+    oscillator.connect(gainNode).connect(ctx.destination);
+    oscillator.start();
+    oscillator.stop(0.3);
+  }
+
   // Помощник показа коротких экранных сообщений
   public messagesByIdDispatchHelper(
     self: ISelf,
     text: string,
     delay?: number,
+    payload?: string,
   ): void {
     this._pause = delay || DESIGN.MESSAGES_TIMEOUT / 1000;
 
-    self.store
-      .dispatch('not/showMessage', { id: this._id, text })
-      .catch((error) => {
-        console.log(error);
-      });
+    // Сообщение пришло в чат
+    if (payload) {
+      self.store
+        .dispatch('not/showMessage', { id: this._id, text: payload })
+        .catch((error) => {
+          console.log(error);
+        }).then(() => {
+          this._beep();
+        });
+    } else {
+      // Остальные
+      self.store
+        .dispatch('not/showMessage', { id: this._id, text })
+        .catch((error) => {
+          console.log(error);
+        }).then(() => {
+          this._beep();
+        });
+    }
 
     this.addEventsToBus(this._pause, this._id, (data) => {
       self.store.dispatch('not/hideMessage', data);

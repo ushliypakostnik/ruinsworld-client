@@ -72,6 +72,14 @@ export default class Helper {
     return Math.exp(-3 * delta) - 1;
   }
 
+  public isInCircle(
+    center: TPosition,
+    position: TPosition,
+    radius: number,
+  ): boolean {
+    return this.distance2D(center.x, center.z, position.x, position.z) < radius;
+  }
+
   public getRandomPosition(
     centerX: number,
     centerZ: number,
@@ -92,7 +100,7 @@ export default class Helper {
     position: TPosition,
     distance: number,
   ): boolean {
-    return !!positions.find(
+    return positions.some(
       (place: TPosition) =>
         this.distance2D(place.x, place.z, position.x, position.z) < distance,
     );
@@ -167,8 +175,12 @@ export default class Helper {
     return this.textureLoader.load(
       `./images/textures/material/${name}.jpg`,
       (map: Texture) => {
-        this._number = self.assets.getRepeatByName(name);
-        map.repeat.set(this._number, this._number);
+        if (name === Textures.trash) map.repeat.set(32, 4);
+        else {
+          this._number = self.assets.getRepeatByName(name);
+          map.repeat.set(this._number, this._number);
+        }
+
         map.wrapS = map.wrapT = THREE.RepeatWrapping;
         map.encoding = THREE.sRGBEncoding;
 
@@ -234,7 +246,7 @@ export default class Helper {
 
   // Помощник подбора
   public pickDispatchHelper(self: ISelf): void {
-    self.audio.startHeroSound(Audios.pick);
+    self.audio.replayHeroSound(Audios.pick);
     self.store
       .dispatch('not/setNotState', {
         field: 'isPick',
@@ -246,7 +258,7 @@ export default class Helper {
             field: 'isPick',
             value: false,
           });
-        }, DESIGN.EFFECT_TIME);
+        }, DESIGN.EFFECT_TIME * 0.9);
       })
       .catch((error) => {
         console.log(error);

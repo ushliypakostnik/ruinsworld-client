@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Text } from 'troika-three-text';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -21,7 +22,16 @@ import emitter from '@/utils/emitter';
 
 // Constants
 import { EmitterEvents } from '@/models/api';
-import { Audios, Animations, Names, Textures, Races, RacesConfig, Lifecycle } from '@/utils/constants';
+import {
+  Audios,
+  Animations,
+  Names,
+  Textures,
+  Races,
+  RacesConfig,
+  Lifecycle,
+  Picks,
+} from '@/utils/constants';
 
 export default class NPC {
   public name = Names.zombies;
@@ -67,8 +77,9 @@ export default class NPC {
   private _usersLength!: number;
   private _npcLength!: number;
   private _distance!: number;
-  private _box!: { x: number, y: number, z: number };
+  private _box!: { x: number; y: number; z: number };
   private _isReady: boolean;
+  private _name!: Text;
 
   constructor() {
     this._list = [];
@@ -83,7 +94,7 @@ export default class NPC {
   }
 
   public init(self: ISelf): void {
-    console.log('NPC init!!!');
+    // console.log('NPC init!!!');
 
     self.assets.GLTFLoader.load(
       './images/models/weapon--npc.glb',
@@ -111,7 +122,7 @@ export default class NPC {
           switch (name) {
             case Races.bidens:
               this._gltfBidens = model;
-              console.log(`NPC ${name} ANIMATIONS: `, this._gltfBidens.animations);
+              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfBidens.animations);
 
               this._modelBidens = this._gltfBidens.scene;
               this._modelBidens.traverse((child: any) => {
@@ -124,7 +135,7 @@ export default class NPC {
               break;
             case Races.mutant:
               this._gltfMutant = model;
-              console.log(`NPC ${name} ANIMATIONS: `, this._gltfMutant.animations);
+              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfMutant.animations);
 
               this._modelMutant = this._gltfMutant.scene;
               this._modelMutant.traverse((child: any) => {
@@ -137,7 +148,7 @@ export default class NPC {
               break;
             case Races.orc:
               this._gltfOrc = model;
-              console.log(`NPC ${name} ANIMATIONS: `, this._gltfOrc.animations);
+              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfOrc.animations);
 
               this._modelOrc = this._gltfOrc.scene;
               this._modelOrc.traverse((child: any) => {
@@ -150,7 +161,7 @@ export default class NPC {
               break;
             case Races.zombie:
               this._gltfZombie = model;
-              console.log(`NPC ${name} ANIMATIONS: `, this._gltfZombie.animations);
+              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfZombie.animations);
 
               this._modelZombie = this._gltfZombie.scene;
               this._modelZombie.traverse((child: any) => {
@@ -163,7 +174,7 @@ export default class NPC {
               break;
             case Races.soldier:
               this._gltfSoldier = model;
-              console.log(`NPC ${name} ANIMATIONS: `, this._gltfSoldier.animations);
+              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfSoldier.animations);
 
               this._modelSoldier = this._gltfSoldier.scene;
               this._modelSoldier.traverse((child: any) => {
@@ -176,7 +187,7 @@ export default class NPC {
               break;
             case Races.cyborg:
               this._gltfCyborg = model;
-              console.log(`NPC ${name} ANIMATIONS: `, this._gltfCyborg.animations);
+              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfCyborg.animations);
 
               this._modelCyborg = this._gltfCyborg.scene;
               this._modelCyborg.traverse((child: any) => {
@@ -189,7 +200,10 @@ export default class NPC {
               break;
           }
 
-          self.helper.loaderDispatchHelper(self.store, name as unknown as Names);
+          self.helper.loaderDispatchHelper(
+            self.store,
+            name as unknown as Names,
+          );
         },
       );
     });
@@ -208,6 +222,18 @@ export default class NPC {
       self.assets.getMaterial(Textures.scale),
     );
 
+    // Реагировать на подбор
+    emitter.on(EmitterEvents.pick, (message: any) => {
+      if (message.type === Picks.dead) {
+        this._npcThree = this._list.find(
+          (unit: IUnitThree) => unit.id === message.id,
+        ) as IUnitThree;
+        if (this._npcThree) {
+          this._removeNPC(self, this._npcThree);
+        }
+      }
+    });
+
     self.helper.loaderDispatchHelper(self.store, this.name);
   }
 
@@ -215,7 +241,8 @@ export default class NPC {
   public getList(): IUnitInfo[] {
     return this._list
       .filter((unit) => unit.animation !== 'dead')
-      .filter((unit) => this._idsList.includes(unit.id)).map((unit: IUnitThree) => {
+      .filter((unit) => this._idsList.includes(unit.id))
+      .map((unit: IUnitThree) => {
         return {
           id: unit.id,
           pseudo: unit.pseudo,
@@ -234,15 +261,12 @@ export default class NPC {
     this._box = RacesConfig[unit.race].box;
     this._modelClone = this._getModelCloneByRace(unit.race);
     this._pseudoClone = new THREE.Mesh(
-      new THREE.BoxBufferGeometry(
-        this._box.x,
-        this._box.y,
-        this._box.z,
-      ),
+      new THREE.BoxBufferGeometry(this._box.x, this._box.y, this._box.z),
       self.assets.getMaterial(Textures.pseudo),
     );
     this._pseudoClone.name = `${unit.id} ${unit.race}`;
-    this._pseudoClone.visible = Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
+    this._pseudoClone.visible = process.env.VUE_APP_TEST_MODE === '1';
+      Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
 
     this._soundClone = this._sound.clone();
     this._scaleClone = this._scale.clone();
@@ -280,7 +304,25 @@ export default class NPC {
       this._modelClone.position.y + this._box.y + 1,
       this._modelClone.position.z,
     );
-    this._scaleClone.scale.set(unit.health * this._box.y / 200, 1, unit.health / 200 * this._box.y);
+    this._scaleClone.scale.set(
+      (unit.health * this._box.y) / 200,
+      1,
+      (unit.health / 200) * this._box.y,
+    );
+
+    this._name = new Text();
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    this._name.text = Math.round(Number(unit.exp));
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    this._name.fontSize = 0.75;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    this._name.color = 0xffffff;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    this._name.sync();
 
     this._mixer = new THREE.AnimationMixer(this._modelClone);
     this._npcThree = {
@@ -297,7 +339,7 @@ export default class NPC {
       scale: this._scaleClone.uuid,
       weapon: RacesConfig[unit.race].isWeapon ? this._weaponClone.uuid : '',
       fire: '',
-      text: null,
+      text: this._name,
       isHide: false,
       mixer: this._mixer,
       prevAction: this._getAnimation(
@@ -330,6 +372,9 @@ export default class NPC {
     if (RacesConfig[unit.race].isWeapon) self.scene.add(this._weaponClone);
     if (unit.animation !== 'dead') {
       self.scene.add(this._scaleClone);
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      self.scene.add(this._name);
     } else {
       this._setDeadPseudo(self, unit, this._pseudoClone, this._box.y);
     }
@@ -377,6 +422,7 @@ export default class NPC {
       ) as Group;
       if (this._weaponClone) this._weaponClone.removeFromParent();
     }
+    unit.text.removeFromParent();
     this._list = this._list.filter((npc) => npc.id !== unit.id);
   }
 
@@ -401,17 +447,49 @@ export default class NPC {
       ) as Group;
       if (this._modelClone) {
         this._speed = self.events.delta;
-        if ((this._modelClone.rotation.y < info.rotationY - this._speed * 1.1) ||
-          (this._modelClone.rotation.y > info.rotationY + this._speed * 1.1)) {
-          this._modelClone.quaternion.slerp(new THREE.Quaternion(unit.directionX, unit.directionY, unit.directionZ, unit.directionW), 0.05);
-        } else this._modelClone.quaternion.copy(new THREE.Quaternion(unit.directionX, unit.directionY, unit.directionZ, unit.directionW));
+        if (
+          this._modelClone.rotation.y < info.rotationY - this._speed * 1.1 ||
+          this._modelClone.rotation.y > info.rotationY + this._speed * 1.1
+        ) {
+          this._modelClone.quaternion.slerp(
+            new THREE.Quaternion(
+              unit.directionX,
+              unit.directionY,
+              unit.directionZ,
+              unit.directionW,
+            ),
+            0.05,
+          );
+        } else
+          this._modelClone.quaternion.copy(
+            new THREE.Quaternion(
+              unit.directionX,
+              unit.directionY,
+              unit.directionZ,
+              unit.directionW,
+            ),
+          );
 
-        this._target.set(info.positionX, info.positionY - this._box.y / 2, info.positionZ);
+        this._target.set(
+          info.positionX,
+          info.positionY - this._box.y / 2,
+          info.positionZ,
+        );
         this._distance = this._target.distanceTo(this._modelClone.position);
-        this._speed = self.events.delta * this._distance * ((info.isJump || info.animation === 'hit') ? 4 : info.animation === 'run' ? 2 : 1);
+        this._speed =
+          self.events.delta *
+          this._distance *
+          (info.isJump || info.animation === 'hit'
+            ? 4
+            : info.animation === 'run'
+            ? 2
+            : 1);
 
         if (this._distance > 50) {
-          console.log('Координаты юнита очень сильно изменились: ', this._distance);
+          console.log(
+            'Координаты юнита очень сильно изменились: ',
+            this._distance,
+          );
 
           // Редчайший кейс - если мир это одна локация и непись релоцировался через сторону на другую
           this._modelClone.position.copy(this._target);
@@ -459,7 +537,8 @@ export default class NPC {
                   'uuid',
                   unit.weapon,
                 ) as Group;
-                if (this._weaponClone.visible) this._weaponClone.visible = false;
+                if (this._weaponClone.visible)
+                  this._weaponClone.visible = false;
               }
             }
           } else {
@@ -483,21 +562,32 @@ export default class NPC {
             this._modelClone.position.z,
           );
         }
-      }
 
-      // Показатель здоровья
-      this._scaleClone = self.scene.getObjectByProperty(
-        'uuid',
-        unit.scale,
-      ) as Mesh;
-      if (this._scaleClone) {
-        this._scaleClone.setRotationFromMatrix(self.camera.matrix);
-        this._scaleClone.position.set(
-          this._modelClone.position.x,
-          this._modelClone.position.y + this._box.y + 1,
-          this._modelClone.position.z,
-        );
-        this._scaleClone.scale.set(unit.health / 200 * this._box.y, 1, unit.health / 200 * this._box.y);
+        // Показатель здоровья
+        this._scaleClone = self.scene.getObjectByProperty(
+          'uuid',
+          unit.scale,
+        ) as Mesh;
+        if (this._scaleClone) {
+          this._scaleClone.setRotationFromMatrix(self.camera.matrix);
+          this._scaleClone.position.set(
+            this._modelClone.position.x,
+            this._modelClone.position.y + this._box.y + 1,
+            this._modelClone.position.z,
+          );
+          this._scaleClone.scale.set(
+            (unit.health / 200) * this._box.y,
+            1,
+            (unit.health / 200) * this._box.y,
+          );
+        }
+
+        // Уровень
+        unit.text.text = Math.round(Number(info.exp));
+        unit.text.setRotationFromMatrix(self.camera.matrix);
+        unit.text.position.x = this._modelClone.position.x;
+        unit.text.position.y = this._modelClone.position.y + this._box.y + 2;
+        unit.text.position.z = this._modelClone.position.z;
       }
 
       if (RacesConfig[unit.race].isWeapon) {
@@ -508,7 +598,7 @@ export default class NPC {
         if (this._weaponClone) {
           this._weaponClone.position.set(
             this._modelClone.position.x,
-            this._modelClone.position.y + (this._box.y * 4/5),
+            this._modelClone.position.y + (this._box.y * 4) / 5,
             this._modelClone.position.z,
           );
           this._weaponClone.quaternion.copy(this._modelClone.quaternion);
@@ -528,9 +618,12 @@ export default class NPC {
         // @ts-ignore
         // console.log(unit.nextAction['_clip'].name);
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (unit.nextAction['_clip'].name === 'attack' && RacesConfig[unit.race].isWeapon) {
+        if (
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          unit.nextAction['_clip'].name === 'attack' &&
+          RacesConfig[unit.race].isWeapon
+        ) {
           this._weaponClone = self.scene.getObjectByProperty(
             'uuid',
             unit.weapon,
@@ -538,9 +631,12 @@ export default class NPC {
           if (this._weaponClone) this._weaponClone.visible = true;
         }
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (unit.prevAction['_clip'].name === 'attack' && RacesConfig[unit.race].isWeapon) {
+        if (
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          unit.prevAction['_clip'].name === 'attack' &&
+          RacesConfig[unit.race].isWeapon
+        ) {
           this._weaponClone = self.scene.getObjectByProperty(
             'uuid',
             unit.weapon,
@@ -548,8 +644,16 @@ export default class NPC {
           if (this._weaponClone) this._weaponClone.visible = false;
         }
 
-        this._v1 = new THREE.Vector3(unit.positionX, unit.positionY, unit.positionZ);
-        this._v2 = new THREE.Vector3(self.camera.position.x, self.camera.position.y, self.camera.position.z);
+        this._v1 = new THREE.Vector3(
+          unit.positionX,
+          unit.positionY,
+          unit.positionZ,
+        );
+        this._v2 = new THREE.Vector3(
+          self.camera.position.x,
+          self.camera.position.y,
+          self.camera.position.z,
+        );
         this._distance = this._v1.distanceTo(this._v2);
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -571,19 +675,28 @@ export default class NPC {
             unit.isIdlePlay = false;
           }
 
-          if (this._distance < process.env.VUE_APP_SOUND_MAX) {
+          if (this._distance < Number(process.env.VUE_APP_SOUND_MAX)) {
             this._playDead(self, unit);
           }
 
           if (this._scaleClone) this._scaleClone.visible = false;
+          unit.text.visible = false;
           setTimeout(() => {
             unit.isDead = true; // Все!
           }, 5000);
         } else {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (unit.isStepsStop && unit.nextAction['_clip'].name === 'run' || unit.nextAction['_clip'].name === 'back' || unit.nextAction['_clip'].name === 'walking') {
-            if (this._distance < process.env.VUE_APP_SOUND_MAX / 2) {
+          if (
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            (unit.isStepsStop && unit.nextAction['_clip'].name === 'run') ||
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            unit.nextAction['_clip'].name === 'back' ||
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            unit.nextAction['_clip'].name === 'walking'
+          ) {
+            if (this._distance < Number(process.env.VUE_APP_SOUND_MAX) / 2) {
               this._startSteps(self, unit);
             }
             unit.isStepsStop = false;
@@ -591,39 +704,73 @@ export default class NPC {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           if (unit.isIdleStop && unit.nextAction['_clip'].name === 'idle') {
-            if (this._distance < process.env.VUE_APP_SOUND_MAX) {
+            if (this._distance < Number(process.env.VUE_APP_SOUND_MAX)) {
               this._startIdle(self, unit);
             }
             unit.isIdleStop = false;
           }
-          
+
           if (unit.isStepsPlay) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            if ((unit.nextAction['_clip'].name === 'kick' || unit.nextAction['_clip'].name === 'attack' || unit.nextAction['_clip'].name === 'cry' || unit.nextAction['_clip'].name === 'idle') ||
+            if (
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
-              ((unit.prevAction['_clip'].name === 'walking' && unit.nextAction['_clip'].name !== 'run' && unit.nextAction['_clip'].name !== 'back') ||
+              unit.nextAction['_clip'].name === 'kick' ||
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
-              (unit.prevAction['_clip'].name === 'run' && unit.nextAction['_clip'].name !== 'walking' && unit.nextAction['_clip'].name !== 'back') &&
+              unit.nextAction['_clip'].name === 'attack' ||
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
-              (unit.prevAction['_clip'].name === 'back' && unit.nextAction['_clip'].name !== 'walking' && unit.nextAction['_clip'].name !== 'run'))) {
+              unit.nextAction['_clip'].name === 'cry' ||
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              unit.nextAction['_clip'].name === 'idle' ||
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              (unit.prevAction['_clip'].name === 'walking' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.nextAction['_clip'].name !== 'run' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.nextAction['_clip'].name !== 'back') ||
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              (unit.prevAction['_clip'].name === 'run' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.nextAction['_clip'].name !== 'walking' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.nextAction['_clip'].name !== 'back' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.prevAction['_clip'].name === 'back' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.nextAction['_clip'].name !== 'walking' &&
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                unit.nextAction['_clip'].name !== 'run')
+            ) {
               this._pauseSteps(self, unit);
               unit.isStepsPlay = false;
-            } 
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            if (unit.nextAction['_clip'].name === 'run' || unit.nextAction['_clip'].name === 'back') {
+            }
+            if (
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              unit.nextAction['_clip'].name === 'run' ||
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              unit.nextAction['_clip'].name === 'back'
+            ) {
               this._setStepsToRun(self, unit);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
             } else if (unit.nextAction['_clip'].name === 'walking') {
               this._setStepsToWalk(self, unit);
             }
-          } 
-          
+          }
+
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           if (unit.isIdlePlay && unit.prevAction['_clip'].name === 'idle') {
@@ -631,10 +778,18 @@ export default class NPC {
             unit.isIdlePlay = false;
           }
 
-          if (this._distance < process.env.VUE_APP_SOUND_MAX) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            if (unit.nextAction['_clip'].name === 'hit' || unit.nextAction['_clip'].name === 'cry' || unit.nextAction['_clip'].name === 'attack') {
+          if (this._distance < Number(process.env.VUE_APP_SOUND_MAX)) {
+            if (
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              unit.nextAction['_clip'].name === 'hit' ||
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              unit.nextAction['_clip'].name === 'cry' ||
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              unit.nextAction['_clip'].name === 'attack'
+            ) {
               if (unit.isStepsPlay) {
                 this._pauseSteps(self, unit);
                 unit.isStepsStop = true;
@@ -642,9 +797,14 @@ export default class NPC {
                 this._pauseIdle(self, unit);
                 unit.isIdleStop = true;
               }
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              if (!(unit.nextAction['_clip'].name === 'attack' && (unit.race === Races.cyborg || unit.race === Races.soldier))) {
+              if (
+                !(
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore
+                  unit.nextAction['_clip'].name === 'attack' &&
+                  (unit.race === Races.cyborg || unit.race === Races.soldier)
+                )
+              ) {
                 setTimeout(() => {
                   this._playHit(self, unit);
                 }, 700);
@@ -652,21 +812,21 @@ export default class NPC {
             }
           }
 
-          if (this._distance < process.env.VUE_APP_SOUND_MAX / 2) {
+          if (this._distance < Number(process.env.VUE_APP_SOUND_MAX) / 2) {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             if (unit.nextAction['_clip'].name === 'jump') {
               setTimeout(() => {
                 self.audio.startObjectSound(unit.sound, Audios.jumpstart);
               }, 1400);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
             } else if (unit.prevAction['_clip'].name === 'jump') {
               setTimeout(() => {
                 this._playJump(self, unit);
               }, 100);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
             } else if (unit.nextAction['_clip'].name === 'kick') {
               setTimeout(() => {
                 self.audio.startObjectSound(unit.sound, Audios.jumpstart);
@@ -706,7 +866,7 @@ export default class NPC {
         if (this._time > 1 || !this._list.length) {
           this._setNewList(self);
           this._time = 0;
-  
+
           /*
           console.log('Пересборка и оптимизация СТАРТ: ',
           JSON.parse(
@@ -719,7 +879,7 @@ export default class NPC {
             JSON.stringify(this._idsList),
           ));
           */
-  
+
           // Самый первый раз
           if (!this._isFirstAnimate) {
             this._isFirstAnimate = true;
@@ -741,7 +901,10 @@ export default class NPC {
             this._listMerge.forEach((npc) => {
               // console.log('NPC ///////////////////////////////////////////////////////', npc.id);
               // Нет в новом списке - на удаление
-              if (this._idsList.includes(npc.id) && !this._idsListNew.includes(npc.id)) {
+              if (
+                this._idsList.includes(npc.id) &&
+                !this._idsListNew.includes(npc.id)
+              ) {
                 // console.log('Нет в новом списке - на удаление: ', this._idsListNew, npc.id);
                 this._npcThree = this._list.find(
                   (unit: IUnitThree) => unit.id === npc.id,
@@ -750,12 +913,18 @@ export default class NPC {
                   // console.log('УДАЛЯЕМ: ', npc.id);
                   this._removeNPC(self, this._npcThree);
                 }
-                // Нет в старом списке - на добавлекние
-              } else if (!this._idsList.includes(npc.id) && this._idsListNew.includes(npc.id)) {
+                // Нет в старом списке - на добавление
+              } else if (
+                !this._idsList.includes(npc.id) &&
+                this._idsListNew.includes(npc.id)
+              ) {
                 // console.log('Нет в старом списке - ДОБАВЛЯЕМ: ', npc.id);
                 this._addNPC(self, npc);
                 // Есть и там и там - анимируем
-              } else if (this._idsList.includes(npc.id) && this._idsListNew.includes(npc.id)) {
+              } else if (
+                this._idsList.includes(npc.id) &&
+                this._idsListNew.includes(npc.id)
+              ) {
                 // console.log('Есть и там и там - анимируем: ', npc.id);
                 this._npcThree = this._list.find(
                   (unit: IUnitThree) => unit.id === npc.id,
@@ -798,12 +967,14 @@ export default class NPC {
   private _setNewList(self: ISelf): void {
     this._listNew = JSON.parse(
       JSON.stringify(
-        self.store.getters['api/game'].npc
-          .filter((unit: { lifecycle: Lifecycle; }) => unit.lifecycle !== Lifecycle.born)
+        self.store.getters['api/game'].npc.filter(
+          (unit: { lifecycle: Lifecycle }) => unit.lifecycle !== Lifecycle.born,
+        ),
       ),
     ); // Не показываем только что рожденных
     this._usersLength = self.store.getters['api/game'].users.length - 1;
-    if (this._usersLength < 10) this._npcLength = process.env.VUE_APP_ITEMS - this._usersLength;
+    if (this._usersLength < 10)
+      this._npcLength = Number(process.env.VUE_APP_ITEMS) - this._usersLength;
     else this._npcLength = 5;
     this._listNewMin = this._listNew
       .sort((a: IUnit, b: IUnit) => {
@@ -826,13 +997,25 @@ export default class NPC {
         (unit: IUnitThree) => unit.id === npc.id,
       ) as IUnitThree;
       if (this._npcThree) {
-        this._v1 = new THREE.Vector3(npc.positionX, npc.positionY, npc.positionZ);
-        this._v2 = new THREE.Vector3(self.camera.position.x, self.camera.position.y, self.camera.position.z);
-  
-        if (this._v1.distanceTo(this._v2) < process.env.VUE_APP_SOUND_MAX) {
-          if (npc.animation === 'idle' &&
-              !this._npcThree.isIdlePlay &&
-              npc.lifecycle !== Lifecycle.attention) {
+        this._v1 = new THREE.Vector3(
+          npc.positionX,
+          npc.positionY,
+          npc.positionZ,
+        );
+        this._v2 = new THREE.Vector3(
+          self.camera.position.x,
+          self.camera.position.y,
+          self.camera.position.z,
+        );
+
+        if (
+          this._v1.distanceTo(this._v2) < Number(process.env.VUE_APP_SOUND_MAX)
+        ) {
+          if (
+            npc.animation === 'idle' &&
+            !this._npcThree.isIdlePlay &&
+            npc.lifecycle !== Lifecycle.attention
+          ) {
             this._startIdle(self, this._npcThree);
             this._npcThree.isIdlePlay = true;
           }
@@ -843,19 +1026,26 @@ export default class NPC {
           }
         }
 
-        if (this._v1.distanceTo(this._v2) < process.env.VUE_APP_SOUND_MAX / 2) {
-          if (!this._npcThree.isStepsPlay &&
-              (npc.animation === 'walking' ||
+        if (
+          this._v1.distanceTo(this._v2) <
+          Number(process.env.VUE_APP_SOUND_MAX) / 2
+        ) {
+          if (
+            !this._npcThree.isStepsPlay &&
+            (npc.animation === 'walking' ||
               npc.animation === 'run' ||
-              npc.animation === 'back')) {
+              npc.animation === 'back')
+          ) {
             this._startSteps(self, this._npcThree);
             this._npcThree.isStepsPlay = true;
           }
         } else {
-          if (this._npcThree.isStepsPlay &&
+          if (
+            this._npcThree.isStepsPlay &&
             (npc.animation === 'walking' ||
-            npc.animation === 'run' ||
-            npc.animation === 'back')) {
+              npc.animation === 'run' ||
+              npc.animation === 'back')
+          ) {
             this._pauseSteps(self, this._npcThree);
             this._npcThree.isStepsPlay = false;
           }
@@ -973,41 +1163,37 @@ export default class NPC {
     switch (unit.race) {
       case Races.bidens:
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantsteps);
-        self.audio.addAudioOnObject(
-          self,
-          unit.sound,
-          Audios.jumpstart,
-        );
+        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantjumpend);
         self.audio.addAudioOnObject(self, unit.sound, Audios.bidensidle);
         self.audio.addAudioOnObject(self, unit.sound, Audios.bidenshit);
         self.audio.addAudioOnObject(self, unit.sound, Audios.bidensdead);
 
         self.audio.setVolumeOnObjectSound(unit.sound, Audios.jumpstart, 1);
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.mutantsteps, 1.6);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.mutantsteps,
+          1.6,
+        );
         break;
       case Races.mutant:
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantsteps);
-        self.audio.addAudioOnObject(
-          self,
-          unit.sound,
-          Audios.jumpstart,
-        );
+        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantjumpend);
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantidle);
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutanthit);
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantdead);
 
         self.audio.setVolumeOnObjectSound(unit.sound, Audios.jumpstart, 1);
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.mutantsteps, 1.6);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.mutantsteps,
+          1.6,
+        );
         break;
       case Races.orc:
         self.audio.addAudioOnObject(self, unit.sound, Audios.steps);
-        self.audio.addAudioOnObject(
-          self,
-          unit.sound,
-          Audios.jumpstart,
-        );
+        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
         self.audio.addAudioOnObject(self, unit.sound, Audios.jumpend);
         self.audio.addAudioOnObject(self, unit.sound, Audios.orcidle);
         self.audio.addAudioOnObject(self, unit.sound, Audios.orchit);
@@ -1019,45 +1205,39 @@ export default class NPC {
         break;
       case Races.zombie:
         self.audio.addAudioOnObject(self, unit.sound, Audios.steps);
-        self.audio.addAudioOnObject(
-          self,
-          unit.sound,
-          Audios.jumpstart,
-        );
+        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
         self.audio.addAudioOnObject(self, unit.sound, Audios.jumpend);
         self.audio.addAudioOnObject(self, unit.sound, Audios.zombieidle);
         self.audio.addAudioOnObject(self, unit.sound, Audios.zombiehit);
         self.audio.addAudioOnObject(self, unit.sound, Audios.zombiedead);
 
+        self.audio.setVolumeOnObjectSound(unit.sound, Audios.steps, 0.5);
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
         break;
       case Races.soldier:
         self.audio.addAudioOnObject(self, unit.sound, Audios.steps);
-        self.audio.addAudioOnObject(
-          self,
-          unit.sound,
-          Audios.jumpstart,
-        );
+        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
         self.audio.addAudioOnObject(self, unit.sound, Audios.jumpend);
         self.audio.addAudioOnObject(self, unit.sound, Audios.soldieridle);
         self.audio.addAudioOnObject(self, unit.sound, Audios.soldierhit);
         self.audio.addAudioOnObject(self, unit.sound, Audios.soldierdead);
 
+        self.audio.setVolumeOnObjectSound(unit.sound, Audios.steps, 0.5);
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
         break;
       case Races.cyborg:
         self.audio.addAudioOnObject(self, unit.sound, Audios.cyborgsteps);
-        self.audio.addAudioOnObject(
-          self,
-          unit.sound,
-          Audios.jumpstart,
-        );
+        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
         self.audio.addAudioOnObject(self, unit.sound, Audios.jumpend);
         self.audio.addAudioOnObject(self, unit.sound, Audios.cyborghit);
         self.audio.addAudioOnObject(self, unit.sound, Audios.cyborgidle);
         self.audio.addAudioOnObject(self, unit.sound, Audios.cyborgdead);
 
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.cyborgsteps, 1.7);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.cyborgsteps,
+          1.7,
+        );
         break;
     }
   }
@@ -1088,33 +1268,45 @@ export default class NPC {
   private _playDead(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
       case Races.bidens:
-        if (unit.isIdlePlay) self.audio.stopObjectSound(unit.sound, Audios.bidensidle);
-        if (unit.isStepsPlay) self.audio.stopObjectSound(unit.sound, Audios.mutantsteps);
+        if (unit.isIdlePlay)
+          self.audio.stopObjectSound(unit.sound, Audios.bidensidle);
+        if (unit.isStepsPlay)
+          self.audio.stopObjectSound(unit.sound, Audios.mutantsteps);
         self.audio.startObjectSound(unit.sound, Audios.bidensdead);
         break;
       case Races.mutant:
-        if (unit.isIdlePlay) self.audio.stopObjectSound(unit.sound, Audios.mutantidle);
-        if (unit.isStepsPlay) self.audio.stopObjectSound(unit.sound, Audios.mutantsteps);
+        if (unit.isIdlePlay)
+          self.audio.stopObjectSound(unit.sound, Audios.mutantidle);
+        if (unit.isStepsPlay)
+          self.audio.stopObjectSound(unit.sound, Audios.mutantsteps);
         self.audio.startObjectSound(unit.sound, Audios.mutantdead);
         break;
       case Races.orc:
-        if (unit.isIdlePlay) self.audio.stopObjectSound(unit.sound, Audios.orcidle);
-        if (unit.isStepsPlay) self.audio.stopObjectSound(unit.sound, Audios.steps);
+        if (unit.isIdlePlay)
+          self.audio.stopObjectSound(unit.sound, Audios.orcidle);
+        if (unit.isStepsPlay)
+          self.audio.stopObjectSound(unit.sound, Audios.steps);
         self.audio.startObjectSound(unit.sound, Audios.orcdead);
         break;
       case Races.zombie:
-        if (unit.isIdlePlay) self.audio.stopObjectSound(unit.sound, Audios.zombieidle);
-        if (unit.isStepsPlay) self.audio.stopObjectSound(unit.sound, Audios.steps);
+        if (unit.isIdlePlay)
+          self.audio.stopObjectSound(unit.sound, Audios.zombieidle);
+        if (unit.isStepsPlay)
+          self.audio.stopObjectSound(unit.sound, Audios.steps);
         self.audio.startObjectSound(unit.sound, Audios.zombiedead);
         break;
       case Races.soldier:
-        if (unit.isIdlePlay) self.audio.stopObjectSound(unit.sound, Audios.soldieridle);
-        if (unit.isStepsPlay) self.audio.stopObjectSound(unit.sound, Audios.steps);
+        if (unit.isIdlePlay)
+          self.audio.stopObjectSound(unit.sound, Audios.soldieridle);
+        if (unit.isStepsPlay)
+          self.audio.stopObjectSound(unit.sound, Audios.steps);
         self.audio.startObjectSound(unit.sound, Audios.soldierdead);
         break;
       case Races.cyborg:
-        if (unit.isIdlePlay) self.audio.stopObjectSound(unit.sound, Audios.cyborgidle);
-        if (unit.isStepsPlay) self.audio.stopObjectSound(unit.sound, Audios.cyborgsteps);
+        if (unit.isIdlePlay)
+          self.audio.stopObjectSound(unit.sound, Audios.cyborgidle);
+        if (unit.isStepsPlay)
+          self.audio.stopObjectSound(unit.sound, Audios.cyborgsteps);
         self.audio.startObjectSound(unit.sound, Audios.cyborgdead);
         break;
     }
@@ -1160,7 +1352,11 @@ export default class NPC {
     switch (unit.race) {
       case Races.bidens:
       case Races.mutant:
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.mutantsteps, 2);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.mutantsteps,
+          2,
+        );
         break;
       case Races.orc:
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 1);
@@ -1170,7 +1366,11 @@ export default class NPC {
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.8);
         break;
       case Races.cyborg:
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.cyborgsteps, 1.8);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.cyborgsteps,
+          1.8,
+        );
         break;
     }
   }
@@ -1179,17 +1379,25 @@ export default class NPC {
     switch (unit.race) {
       case Races.bidens:
       case Races.mutant:
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.mutantsteps, 1.6);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.mutantsteps,
+          1.6,
+        );
         break;
       case Races.orc:
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.8);
         break;
-        case Races.zombie:
+      case Races.zombie:
       case Races.soldier:
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
         break;
       case Races.cyborg:
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.cyborgsteps, 1.5);
+        self.audio.setPlaybackRateOnObjectSound(
+          unit.sound,
+          Audios.cyborgsteps,
+          1.5,
+        );
         break;
     }
   }
@@ -1256,104 +1464,80 @@ export default class NPC {
   }
 
   // Установить коробку для умершего
-  private _setDeadPseudo(self: ISelf, unit: IUnit, box: Mesh, height: number): void {
+  private _setDeadPseudo(
+    self: ISelf,
+    unit: IUnit,
+    box: Mesh,
+    height: number,
+  ): void {
     switch (unit.race) {
       case Races.bidens:
         box.scale.set(2, 0.4, 3.5);
-        box.position.set(
-          unit.positionX,
-          unit.positionY - height / 2,
-          unit.positionZ,
-        ).add(
-          self.helper
-            .getForwardVectorFromObject(box)
-            .negate()
-            .multiplyScalar(4),
-        ).add(
-          self.helper
-            .getSideVectorFromObject(box)
-            .multiplyScalar(1.5),
-        );
+        box.position
+          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
+          .add(
+            self.helper
+              .getForwardVectorFromObject(box)
+              .negate()
+              .multiplyScalar(4),
+          )
+          .add(self.helper.getSideVectorFromObject(box).multiplyScalar(1.5));
         break;
       case Races.mutant:
         box.scale.set(1.5, 0.6, 2.5);
-        box.position.set(
-          unit.positionX,
-          unit.positionY - height / 2,
-          unit.positionZ,
-        ).add(
-          self.helper
-            .getForwardVectorFromObject(box)
-            .negate()
-            .multiplyScalar(2.5),
-        ).add(
-          self.helper
-            .getSideVectorFromObject(box)
-            .multiplyScalar(0.5),
-        );
+        box.position
+          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
+          .add(
+            self.helper
+              .getForwardVectorFromObject(box)
+              .negate()
+              .multiplyScalar(2.5),
+          )
+          .add(self.helper.getSideVectorFromObject(box).multiplyScalar(0.5));
         break;
       case Races.orc:
         box.scale.set(2, 0.5, 2.5);
-        box.position.set(
-          unit.positionX,
-          unit.positionY - height / 2,
-          unit.positionZ,
-        ).add(
-          self.helper
-            .getForwardVectorFromObject(box)
-            .negate()
-            .multiplyScalar(2),
-        );
+        box.position
+          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
+          .add(
+            self.helper
+              .getForwardVectorFromObject(box)
+              .negate()
+              .multiplyScalar(2),
+          );
         break;
       case Races.zombie:
-        box.scale.set(2.75, 0.5, 2.75);
-        box.position.set(
-          unit.positionX,
-          unit.positionY - height / 2,
-          unit.positionZ,
-        ).add(
-          self.helper
-            .getSideVectorFromObject(box)
-            .negate()
-            .multiplyScalar(0.75),
-        ).add(
-          self.helper
-            .getForwardVectorFromObject(box)
-            .multiplyScalar(0.25),
-        );
+        box.scale.set(5, 0.5, 5);
+        box.position
+          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
+          .add(
+            self.helper
+              .getSideVectorFromObject(box)
+              .negate()
+              .multiplyScalar(0.75),
+          )
+          .add(
+            self.helper.getForwardVectorFromObject(box).multiplyScalar(0.25),
+          );
         break;
       case Races.soldier:
-        box.scale.set(3, 0.5, 3);
-        box.position.set(
-          unit.positionX,
-          unit.positionY - height / 2,
-          unit.positionZ,
-        ).add(
-          self.helper
-            .getForwardVectorFromObject(box)
-            .multiplyScalar(1.5),
-        ).add(
-          self.helper
-            .getSideVectorFromObject(box)
-            .multiplyScalar(0.55),
-        );
+        box.scale.set(6, 0.5, 6);
+        box.position
+          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
+          .add(self.helper.getForwardVectorFromObject(box).multiplyScalar(1.5))
+          .add(self.helper.getSideVectorFromObject(box).multiplyScalar(0.55));
         break;
       case Races.cyborg:
         box.scale.set(2.7, 0.5, 2.7);
-        box.position.set(
-          unit.positionX,
-          unit.positionY - height / 2,
-          unit.positionZ,
-        ).add(
-          self.helper
-            .getForwardVectorFromObject(box)
-            .negate()
-            .multiplyScalar(1),
-        ).add(
-          self.helper
-            .getSideVectorFromObject(box)
-            .multiplyScalar(0.25),
-        );
+        box.position
+          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
+          .add(
+            self.helper
+              .getForwardVectorFromObject(box)
+              .negate()
+              .multiplyScalar(1),
+          )
+          .add(self.helper.getSideVectorFromObject(box).multiplyScalar(0.25));
         break;
     }
 

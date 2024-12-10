@@ -45,6 +45,7 @@ export enum Names {
   grasses = 'grasses',
   hills = 'hills',
   points = 'points',
+  things = 'things',
 }
 
 export enum Modes {
@@ -53,9 +54,31 @@ export enum Modes {
   dead = 'dead',
 }
 
-export enum Pick {
+export enum Picks {
   dead = 'dead',
   thing = 'thing',
+}
+
+export enum Damages {
+  kick = 'kick',
+  light = 'light',
+  shot = 'shot',
+}
+
+export enum Moves {
+  right = 'right',
+  left = 'left',
+  top = 'top',
+  bottom = 'bottom',
+}
+
+export enum Things {
+  grenades = 'grenades',
+  vodka = 'vodka',
+  stew = 'stew',
+
+  // Rare
+  go = 'go',
 }
 
 export enum Animations {
@@ -108,7 +131,7 @@ export enum Textures {
   metall = 'metall',
   metall2 = 'metall2',
   fire = 'fire',
-  fire2 = 'fire2',
+  purple = 'purple',
   light = 'light',
   pseudo = 'pseudo',
   scale = 'scale',
@@ -117,6 +140,12 @@ export enum Textures {
   grass = 'grass',
   playerred = 'playerred',
   playerblue = 'playerblue',
+  vodka = 'vodka',
+  go = 'go',
+  zone = 'zone',
+  trash = 'trash',
+  road = 'road',
+  yellow = 'yellow',
 }
 
 export enum Audios {
@@ -132,6 +161,8 @@ export enum Audios {
   hit = 'hit',
   dead = 'dead',
   pick = 'pick',
+  click = 'click',
+  gosong = 'gosong',
 
   // Weapon
   explosion = 'explosion',
@@ -176,7 +207,7 @@ export enum Audios {
 export enum Colors {
   white = 0xffffff,
   black = 0x000000,
-  // yellow = 0xfed564,
+  yellow = 0xfed564,
   yellowDark = 0xe6a800,
   fog = 0xa48ed8,
   sun = 0xfdb813,
@@ -200,10 +231,6 @@ export enum Colors {
   stones4 = 0xa0a0f0, // юго-запад
 }
 
-enum Breakpoints {
-  desktop = 1025,
-}
-
 enum Languages {
   en = 'en',
   ru = 'ru',
@@ -221,8 +248,9 @@ export const LANGUAGES: string[] = [Languages.en, Languages.ru];
 
 // Конфиг
 export const DESIGN: TConfig = {
-  V: '1.0.0',
-  BREAKPOINTS: Breakpoints,
+  BREAKPOINTS: {
+    desktop: 1025,
+  },
   SIZE: 300,
   CAMERA: {
     fov: 80,
@@ -232,20 +260,13 @@ export const DESIGN: TConfig = {
   MESSAGES_TIMEOUT: 3000, // ms
   DEFAULT_VOLUME: 0.3,
   GAMEPLAY: {
-    PLAYER_SPEED: 40,
+    PLAYER_SPEED: 20,
     PLAYER_HEIGHT: 2,
     JUMP: 20,
     GRAVITY: 40,
     SHOTS_SPEED: 50,
   },
-  MODELS: [
-    { x: -2, y: -2 },
-    { x: -2, y: -1 },
-    { x: -1, y: -2 },
-    { x: -2, y: -3 },
-    { x: -1, y: -1 },
-  ],
-  UPDATE_TIME: 400,
+  UPDATE_TIME: 100,
   EFFECT_TIME: 1500,
 };
 
@@ -315,7 +336,7 @@ export const MESSAGES: TMessages = {
     name: 'The whole world is in ruins',
     nick: 'Your nickname:',
     nick2: '(Only latin)',
-    select: 'Select your race:',
+    race: 'Select your race:',
     gadgetsgate: 'The game is for desktop browsers only!',
     chromegate:
       'In order to play, open in the Google Chrome (or Yandex) browser (Firefox not recommended)',
@@ -327,41 +348,115 @@ export const MESSAGES: TMessages = {
     control4: 'Run: Shift + W',
     control5: 'Hidden movement: C or Alt',
     control6: 'Look: Mouse (If it stops working, press P and select “Play”)',
-    // control7: 'Take a thing / Open door : E',
-    control8: 'Optical sight: Right mouse button',
+    control7: 'Optical sight: Right mouse button',
+    control8: 'Help: H',
     control9: 'Map: M',
     control10: 'Menu: P',
     control11: 'Action: E',
+    control12: 'Chat: R',
+    link: 'Join the community on telegram',
     copyright: '© Levon Gambaryan Bro Games',
     gameover: 'Game Over',
 
-    hiddenMoveEnabled: 'You move in stealth mode',
-    hiddenMoveDisabled: 'Stealth mode disabled',
-    tired: 'Your is tired of running',
-    recovered: 'Your can run again',
-    exitOn: 'You are at the exit from the location!',
-    exitOff: 'Exit from a location far away',
+    help1: 'Plot and basic rules',
+    help2: 'Controls and dials',
+    help3: 'Кaces',
+    help4: 'Items',
+    help5: 'Features',
+    help6: 'Author',
 
-    door: 'Press E to open the door',
+    feature1: '* Several types of different weapons. Not only grenades, but also quick-fire and laser ones. Mines.',
+    feature2: '* Flying NPCs. Drones protecting locations from players. And birds for hunting.',
+    feature3: '* More items. Modifier items for a more interesting battle.',
+
+    author: 'Levon Alekseevich Gambaryan',
+
+    history: 'In preparation for the invasion, advanced Reptilian emissaries were embedded in the leadership of TNCs, investment funds and the US Democratic Party. They unleashed a nuclear war, and in a few hours of gunfire, the whole Earth was turned into a poisoned desert, and the cities into ruins. A couple hundred years have passed and many living beings have mutated into toxic monsters aimlessly loitering among the ruins and waging a race war against everyone. The main forces of the Reptiles also landed on the planet to finish what they started. You can play either as Human Survivors, rebels resisting final colonization, or as alien invaders.',
+    rule1: 'In the center of each location there are control points and shelters. You can set and change flags on them. If you died in a location that already belongs to your race, then you will be reborn on it. Otherwise - at the original command post of the race, where the flag cannot be changed.',
+    rule2: 'The speed of control depends on the character’s health level and the degree of his poisoning. Players cannot fire heavy weapons while moving or jumping.',
+    rule3: 'Now the magic and energy weapons of the NPCs are breaking through the walls. Players with a low level should not be careful and not allow themselves to be hit with a long-range shot.',
+
+    scale11: 'Red scale',
+    scale12: 'shows the character\'s health level.',
+    scale21: 'Purple scale',
+    scale22: 'shows the level of fatigue. If you are tired, you cannot jump or run until it recovers.',
+    scale31: 'Blue scale',
+    scale32: 'shows your water supply. Look for wells (blue dots on the map) to fill your flask.',
+    scale41: 'Green scale',
+    scale42: 'shows your food supply.',
+    scale51: 'Yellow scale',
+    scale52: 'shows the level of poisoning.',
+    scalemore: 'To the right of the scales there are icons for quick access to items (press keys 1 ... 0 to apply), indicators of their current and maximum quantity in the backpack. In the right corner you see the number of available charges for weapons, as well as their maximum number that can be collected.',
+
+    playersraces: 'Playable races',
+    playersracestext: 'Damage power and regeneration increase with level. Experience points are taken away when consuming certain items (for example, vodka).',
+    nonplayersraces: 'NPC',
+    nonplayersracestext: 'As time passes, units gain experience. When picking up their corpses, players receive experience points and poisoning relative to it. Regeneration in older individuals slows down. Putin\'s cyborgs help the Rebels, have increased intelligence (responsible for visibility and speed of decision-making), and agile NATO members accept the Reptilians as a new power and order on the planet.',
+    things: 'Items',
+    thingstext: 'Some items, such as shots for weapons, are “applied” immediately when picked up. Others - you can dial a limited number and use them via shortcut keys whenever it is convenient for you.',
+    thingsrare: 'Rare Items',
+
+    enemy: 'Enemies',
+    important: 'Important enemies',
+    friend: 'Ally',
+    kick: 'Melee',
+    attack: 'Ranged combat',
+    regeneration: 'Regeneration',
+    intelligence: 'Intelligence',
+    armor: 'Armor',
+    exp: 'Gives experience when selecting',
+    toxic: 'Causes poison when picked up',
+    speed: 'Speed',
+    health: 'Gives health when used',
+    exp2: 'Reduces experience when used',
+    toxic2: 'Poison when used',
+    food: 'Food when used',
+    water: 'Water when used',
+    numbers: 'Contains units',
+    max: 'Maximum quantity',
+
+    hiddenMoveEnabled: 'You move in stealth mode.',
+    hiddenMoveDisabled: 'Stealth mode disabled.',
+    tired: 'Your is tired of running.',
+    recovered: 'Your can run again.',
+    exitOn: 'You are at the exit from the location!',
+    exitOff: 'Exit from a location far away.',
+    foodlow: 'You need to eat!',
+    waterlow: 'You need to find water!',
+    toxichight: 'You need to reduce poisoning',
+    full: 'There\'s already too much of this item!',
+    well: 'Fill the flask with water!',
+    toxiczone: 'You are in a poisoned area!',
+
+    door: 'Press E to open the door.',
     point: 'Raise your race\'s flag at the control station?',
     pointStart: 'The flag cannot be changed at this point!',
     pointGood: 'The point already belongs to your race!',
     pick: 'Pick: ',
 
-    [Races.human]: 'Russian',
+    chat: 'Enter - send a message, Ctrl - close the chat.',
+    close: 'Close chat',
+    send: 'Send message',
+
+    [Races.human]: 'Russian rebel',
     [Races.reptiloid]: 'Reptiloid',
     [Races.bidens]: 'Bidens',
-    [Races.zombie]: 'Feminist',
+    [Races.zombie]: 'Radfeministka',
     [Races.mutant]: 'Narcomutant',
     [Races.orc]: 'Alcoork',
     [Races.soldier]: 'NATO soldier',
     [Races.cyborg]: 'Putin\'s cyborg',
+
+    [Things.grenades]: 'Grenades',
+    [Things.vodka]: 'Vodka',
+    [Things.stew]: 'Stew',
+    [Things.go]: 'Worn Civil Defense CD',
   },
   [Languages.ru]: {
     enter: 'Играть',
     nick: 'Тебя зовут:',
     nick2: '(Только латиницей, к сожалению)',
-    select: 'Выбери свою сторону:',
+    race: 'Выбери свою сторону:',
     name: 'Весь мир в труху',
     gadgetsgate: 'Игра только для десктопных браузеров!',
     chromegate:
@@ -374,34 +469,108 @@ export const MESSAGES: TMessages = {
     control4: 'Бежать: Shift + W',
     control5: 'Cкрытное передвижение (меньше урон): C или Alt',
     control6: 'Осмотреться: Мышь (Если перестало работать - нажмите P и выберите Играть)',
-    // control7: 'Взять предмет / Открыть дверь: Е',
-    control8: 'Оптический прицел: Правая кнопка мыши',
+    control7: 'Оптический прицел: Правая кнопка мыши',
+    control8: 'Подсказка: H',
     control9: 'Карта: M',
     control10: 'Меню: P',
     control11: 'Действие: E',
+    control12: 'Чат: R',
+    link: 'Присоединяйся к сообществу в телеграм',
     copyright: '© Levon Gambaryan Bro Games',
     gameover: 'Проиграл',
 
-    hiddenMoveEnabled: 'Вы двигаетесь в скрытном режиме',
-    hiddenMoveDisabled: 'Скрытный режим отключен',
-    tired: 'Вы устали от бега',
-    recovered: 'Вы снова можете бегать',
-    exitOn: 'Вы на выходе с локации!',
-    exitOff: 'Выход с локации далеко',
+    help1: 'Фабула и правила',
+    help2: 'Управление и шкалы',
+    help3: 'Расы',
+    help4: 'Предметы',
+    help5: 'Планы разработки',
+    help6: 'Автор',
 
-    door: 'Нажмите E для того чтобы открыть дверь',
+    feature1: '* Несколько видов разного оружия. Не только гранаты - быстросрельное и лазерное. Мины.',
+    feature2: '* Летающие неписи. Охраняющие локации от игроков дроны. Птицы для охоты.',
+    feature3: '* Больше предметов. Предметы-модификаторы для более интересного боя.',
+
+    history: 'В рамках подготовки к вторжению, передовые эмиссары Рептилоидов были внедрены в руководство ТНК, инвестиционных фондов и Демократической партии США. Они развязали ядерную войну, и за несколько часов перестрелки вся Земля была превращена в отравленную пустыню, а города в руины. Прошло пара сотен лет и многие живые существа мутировали в токсичных монстров, бесцельно слоняющихся среди развалин, и ведущих расовую войну все против всех. На планету также высадились основные силы Рептилов, чтобы довершить начатое. Вы можете играть или за выживших людей, повстанцев, сопротивляющихся окончательной колонизации, или за инопланетных захватчиков.',
+    rule1: 'В центре каждой локации есть контрольные точки, укрытия. На них можно устанавливать и менять флаги. Если вы погибли на локации которая уже принадлежит вашей расе - то переродитесь на ней. В противном случае - на исходном командном пункте расы, на котором нельзя поменять флаг.',
+    rule2: 'Cкорость контрола зависит от уровня здоровья персонажа и степени его отравления. Игроки не могут стрелять из тяжелого оружия когда перемешаются или прыгают.',
+    rule3: 'Сейчас магия и энергетическое оружие неписей - пробивают сквозь стены. Игрокам с низким уровнем, стоит быть осторожнее, и не доводить до удара дальним по себе.',
+
+    author: 'Левон Алексеевич Гамбарян',
+
+    scale11: 'Красная шкала',
+    scale12: 'показывает уровень здоровья персонажа.',
+    scale21: 'Фиолетовая шкала',
+    scale22: 'показывает уровень усталости. Если вы устали - вы не можете прыгать и бегать пока она не востановится.',
+    scale31: 'Голубая шкала',
+    scale32: 'показывает ваш запас воды. Ищите колодцы (голубые точки на карте) для того чтобы наполнить флягу.',
+    scale41: 'Зеленая шкала',
+    scale42: 'показывает ваш запас пищи.',
+    scale51: 'Желтая шкала',
+    scale52: 'показывает уровень отравления.',
+    scalemore: 'Справа от шкал располагаются пиктограммы быстрого доступа к предметам (нажмите клавиши 1 ... 0 чтобы применить), индикаторы их актуального и максимального количества в рюкзаке. В правом углу вы видете количество имеющихся зарядов для оружия, а также их маскимальное количество которое можно собрать.',
+
+    playersraces: 'Игровые расы',
+    playersracestext: 'Сила урона и регенерация растут вместе с уровнем. Очки опыта отнимаются при употреблении некоторых предметов (например - водки).',
+    nonplayersraces: 'Неписи',
+    nonplayersracestext: 'С ходом времени юниты получают опыт. При подборе их трупов игроки получают очки опыта и отравление относительно него. Регенерация у более старых особей - замедляется. Киборги Путина помогают Повстанцам, имеют повышенный интеллект (отвечает за обзор и скорость принятия решений), а проворные Натовцы - принимают Рептилоидов как новую власть, порядок на планете.',
+    things: 'Предметы',
+    thingstext: 'Некоторые предметы, например, выстрелы к оружию, "применяются" сразу при подборе. Другие - можно набирать некоторое ограниченное количество и применять через клавиши быстрого доступа когда вам удобно.',
+    thingsrare: 'Редкие предметы',
+
+    enemy: 'Враги',
+    important: 'Особенно ненавидит',
+    friend: 'Союзник',
+    kick: 'Ближний бой',
+    attack: 'Дальний бой',
+    regeneration: 'Регенерация',
+    intelligence: 'Интеллект',
+    armor: 'Броня',
+    exp: 'Дает опыта при подборе',
+    toxic: 'Вызывает отравление при подборе',
+    speed: 'Скорость',
+    health: 'Дает здоровья при применении',
+    exp2: 'Отнимает опыта при применении',
+    toxic2: 'Отравление при применении',
+    food: 'Еда при применении',
+    water: 'Вода при применении',
+    numbers: 'Содержит единиц',
+    max: 'Максимальное количество',
+
+    hiddenMoveEnabled: 'Вы двигаетесь в скрытном режиме.',
+    hiddenMoveDisabled: 'Скрытный режим отключен.',
+    tired: 'Вы устали от бега.',
+    recovered: 'Вы снова можете бегать.',
+    exitOn: 'Вы на выходе с локации!',
+    exitOff: 'Выход с локации далеко.',
+    foodlow: 'Вам необходимо поесть!',
+    waterlow: 'Вам необходимо найти воду!',
+    toxichight: 'Вам необходимо снизить отравление!',
+    full: 'Этого предмета уже слишком много!',
+    well: 'Наполнить флягу водой!',
+    toxiczone: 'Вы находитесь в отравленной местности!',
+
+    door: 'Нажмите E для того чтобы открыть дверь.',
     point: 'Поднять флаг своей расы на контрольной точке?',
     pointStart: 'На этой точке нельзя поменять флаг!',
     pointGood: 'Точка уже принадлежит вашей расе!',
     pick: 'Подобрать: ',
 
-    [Races.human]: 'Выживший',
+    chat: 'Enter - отправить сообщение, Ctrl - закрыть чат.',
+    close: 'Закрыть',
+    send: 'Отправить',
+
+    [Races.human]: 'Русский повстанец',
     [Races.reptiloid]: 'Рептилоид',
     [Races.bidens]: 'Байденс',
-    [Races.zombie]: 'Феминистка',
+    [Races.zombie]: 'Радфеминистка',
     [Races.mutant]: 'Наркомутант',
     [Races.orc]: 'Алкоорк',
     [Races.soldier]: 'Натовец',
     [Races.cyborg]: 'Киборг Путина',
+
+    [Things.grenades]: 'Гранаты',
+    [Things.vodka]: 'Водка',
+    [Things.stew]: 'Тушенка',
+    [Things.go]: 'Потертый CD Гражданской Обороны',
   },
 };

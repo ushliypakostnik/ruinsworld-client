@@ -1,6 +1,6 @@
 import type { Text } from 'troika-three-text';
 import type { AnimationAction, AnimationMixer, Group, Vector3 } from 'three';
-import { Races, Lifecycle } from '@/utils/constants';
+import { Races, Lifecycle, Things, Picks } from '@/utils/constants';
 
 // API Interfaces
 ///////////////////////////////////////////////////////
@@ -31,13 +31,20 @@ export enum EmitterEvents {
   onRelocation = 'onRelocation', // На переход на другую локацию
   location = 'location', // Игрок загрузился на локации
   userDead = 'userDead', // Игрок умер
-
   door = 'door', // Игрок открыл дверь
   doors = 'doors', // Нужно обновить двери
   point = 'point', // Смена флага на контрольной точке
+  onPoint = 'onPoint', // На смену флага на контрольной точке
   dead = 'dead', // Новая мертвая коробка на сцене
   pick = 'pick', // Пользователь подобрал что-то
   onPick = 'onPick', // Ответ на подобрал что-то
+  onOnPick = 'onPick', // Удаление после подбора предмета
+  addThing = 'addThing', // Добавлена вещь на сцену
+  removeThing = 'removeThing', // Вещь удалена со сцены
+  use = 'use', // Игрок использовал предмет
+  onUse = 'onUse', // На использовал предмет
+  send = 'send', // Игрок отправил сообщение в чат
+  onSend = 'onSend', // Ответ на сообщение в чат
 }
 
 // Мир
@@ -59,8 +66,21 @@ export interface IStone {
   rotateY: number;
 }
 
-export interface IStone2 extends IStone {
-  model: number;
+export interface IStone2 {
+  x: number;
+  z: number;
+  scale: number;
+  rotateY: number;
+  rotateX: number;
+}
+
+export interface IPin {
+  x: number;
+  z: number;
+  scale: number;
+  rotateY: number;
+  rotateX: number;
+  color: number;
 }
 
 export interface IGrass {
@@ -69,9 +89,39 @@ export interface IGrass {
   scale: number;
 }
 
+export interface IZone {
+  x: number;
+  z: number;
+  radius: number;
+}
+
+export interface ITrash {
+  x: number;
+  z: number;
+  scale: number;
+  scaleY: number;
+  rotate: number;
+}
+
+export interface IWell {
+  x: number;
+  z: number;
+  rotate: number;
+}
+
 export interface ITreeScene {
   model: Group;
   rotate: number;
+}
+
+export interface IStoneScene {
+  model: Group;
+  x: number;
+  z: number;
+}
+
+export interface IWellScene {
+  model: Group;
 }
 
 export interface IBuild {
@@ -96,6 +146,16 @@ export interface IGrassScene {
   rotate: number;
 }
 
+export interface IThing {
+  x: number;
+  z: number;
+  y: number;
+  id: string;
+  type: Things;
+  rotateY: number;
+  rotateX: number;
+}
+
 export interface ILocation {
   id: string;
   x: number;
@@ -104,10 +164,16 @@ export interface ILocation {
   ground: string;
   trees: ITree[];
   grasses: IGrass[];
-  stones: IStone[];
-  stones2: IStone2[];
+  stones1: IStone[];
+  stones2: IStone[];
+  stones3: IStone[];
+  stones4: IStone2[];
+  stones5: IPin[];
   builds: IBuild[];
   users: string[];
+  wells: IWell[];
+  zones: IZone[];
+  trashes: ITrash[];
 }
 
 // Движущийся объект принадлежащий игроку (выстрел) или сам игрок
@@ -213,6 +279,11 @@ export interface IUnitThree extends IUnit {
   isSetDead: boolean;
 }
 
+export interface IThingThree extends IThing {
+  model: string;
+  pseudo: string;
+}
+
 // Оружие
 
 export interface IUnitInfo {
@@ -232,6 +303,18 @@ export interface IBlood {
   scale: number;
   isOff: boolean;
   race: Races;
+}
+
+export interface IObjectThree {
+  id: number;
+  mesh: string;
+}
+
+export interface IZoneThree {
+  id: number;
+  mesh: string;
+  is2: boolean;
+  is3: boolean;
 }
 
 // Обновления игрока
@@ -264,4 +347,23 @@ export interface IUserUpdate {
 export interface IHitsUpdate {
   users: string[];
   npc: string[];
+}
+
+export interface IMessage {
+  id: string;
+  location: string;
+}
+
+export interface IPickMessage extends IMessage {
+  type: Picks;
+  uuid: string;
+  target: string;
+  user: string;
+}
+
+export interface ISendMessage {
+  name: string;
+  race: Races;
+  location: string;
+  text: string;
 }

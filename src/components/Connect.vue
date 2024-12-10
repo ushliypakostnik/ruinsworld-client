@@ -4,11 +4,11 @@
 
 <script>
 /* eslint-disable */
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters, mapActions, mapMutation } from 'vuex';
 
 // Constants
 import { EmitterEvents } from '@/models/api';
-import { DESIGN } from '@/utils/constants';
+import { DESIGN, Picks } from '@/utils/constants';
 
 // Services
 import emitter from '@/utils/emitter';
@@ -25,30 +25,30 @@ export default {
 
   sockets: {
     connect: () => {
-      console.log('socket connected');
+      // console.log('socket connected');
     },
 
     // Ответ сервера на соединение
     onConnect: () => {
-      console.log('Connect sockets onConnect');
+      // console.log('Connect sockets onConnect');
       emitter.emit(EmitterEvents.onConnect);
     },
 
     // Новый игрок
     newPlayer: () => {
-      console.log('Connect sockets newPlayer!!!');
+      // console.log('Connect sockets newPlayer!!!');
       emitter.emit(EmitterEvents.newPlayer);
     },
 
     // Подтверждение старого игрока
     onUpdatePlayer: (player) => {
-      console.log('Connect sockets onUpdatePlayer', player);
+      // console.log('Connect sockets onUpdatePlayer', player);
       emitter.emit(EmitterEvents.onUpdatePlayer, player);
     },
 
     // Реакция на заход в игру
     onEnter: (id) => {
-      console.log('Connect sockets onEnter', id);
+      // console.log('Connect sockets onEnter', id);
       emitter.emit(EmitterEvents.onEnter, id);
     },
 
@@ -89,9 +89,24 @@ export default {
       emitter.emit(EmitterEvents.onRelocation, id);
     },
 
-    onPick: (id) => {
-      // console.log('Connect sockets onPick', id);
-      emitter.emit(EmitterEvents.onPick, id);
+    onPick: (message) => {
+      // console.log('Connect sockets onPick', message);
+      emitter.emit(EmitterEvents.onPick, message);
+    },
+
+    onPoint: (message) => {
+      // console.log('Connect sockets onPoint', message);
+      emitter.emit(EmitterEvents.onPoint, message);
+    },
+
+    onUse: (message) => {
+      // console.log('Connect sockets onUse', message);
+      emitter.emit(EmitterEvents.onUse, message);
+    },
+
+    onSend: (message) => {
+      // console.log('Connect sockets onSend', message);
+      emitter.emit(EmitterEvents.onSend, message);
     },
   },
 
@@ -100,7 +115,9 @@ export default {
       game: 'api/game',
       updates: 'api/updates',
       location: 'api/location',
+      locationIndex: 'api/locationIndex',
 
+      config: 'persist/config',
       id: 'persist/id',
       name: 'persist/name',
       race: 'persist/race',
@@ -109,23 +126,28 @@ export default {
       isPause: 'persist/isPause',
       isGameOver: 'persist/isGameOver',
       isEnter: 'persist/isEnter',
-      isRelocation: 'persist/isRelocation',
+      toxic: 'persist/toxic',
+      food: 'persist/food',
+      water: 'persist/water',
 
       isReload: 'not/isReload',
     }),
   },
 
   created() {
+    // Запрашиваем конфигурацию геймплея
+    this.getConfig();
+
     // Среагировать на ответ сервера на соединение
     this.emitter.on(EmitterEvents.onConnect, () => {
-      console.log('Connect created onConnect!');
+      // console.log('Connect created onConnect!');
       this.$socket.emit(EmitterEvents.onOnConnect, { id: this.id });
       this.onConnect();
     });
 
     // Новый игрок
     this.emitter.on(EmitterEvents.newPlayer, () => {
-      console.log('Connect created newPlayer!');
+      // console.log('Connect created newPlayer!');
       this.onNewPlayer();
     });
 
@@ -171,11 +193,12 @@ export default {
       // console.log('Connect created updateToServer', updates);
       this.sendUpdates(updates);
     });
+
     // Запускаем регулярную отправку обновлений на сервер
     this.timeout = setInterval(() => {
       if (!this.isGameOver && !this.isReload)
         this.sendUpdates(this.getUpdates());
-    }, process.env.VUE_APP_TIMEOUT || 25);
+    }, Number(process.env.VUE_APP_TIMEOUT) || 25);
 
     // Реагировать на выстрел
     this.emitter.on(EmitterEvents.shot, (shot) => {
@@ -226,9 +249,21 @@ export default {
     });
 
     // Игрок поставил флаг на контрольной точке
-    this.emitter.on(EmitterEvents.point, () => {
-      // console.log('Connect created point', this.race, this.location);
-      this.$socket.emit(EmitterEvents.point, { id: this.location, race: this.race });
+    this.emitter.on(EmitterEvents.point, (payload) => {
+      // console.log('Connect created point', payload);
+      this.$socket.emit(EmitterEvents.point, { ...payload, race: this.race });
+    });
+
+    // Игрок поставил флаг на контрольной точке
+    this.emitter.on(EmitterEvents.onPoint, (payload) => {
+      // console.log('Connect created onPoint', payload);
+      this.onPoint(payload);
+    });
+
+    // Игрок умер
+    this.emitter.on(EmitterEvents.userDead, (payload) => {
+      // console.log('Connect created userDead', payload);
+      this.$socket.emit(EmitterEvents.userDead, payload);
     });
 
     // Игрок подобрал что-то
@@ -237,10 +272,33 @@ export default {
       this.$socket.emit(EmitterEvents.pick, payload);
     });
 
-    // Игрок умер
-    this.emitter.on(EmitterEvents.userDead, (payload) => {
-      // console.log('Connect created userDead', payload);
-      this.$socket.emit(EmitterEvents.userDead, payload);
+    // На ответ на подобрал что-то
+    this.emitter.on(EmitterEvents.onPick, (payload) => {
+      // console.log('Connect created onPick', payload);
+      this.onPick(payload);
+    });
+
+    // Игрок применил вещь
+    this.emitter.on(EmitterEvents.use, (payload) => {
+      // console.log('Connect created use', payload);
+      this.$socket.emit(EmitterEvents.use, payload);
+    });
+
+    // На ответ на применил вещь
+    this.emitter.on(EmitterEvents.onUse, (payload) => {
+      // console.log('Connect created use', payload);
+      this.onUse(payload);
+    });
+
+    // Игрок отправил сообщение в чат
+    this.emitter.on(EmitterEvents.send, (payload) => {
+      // console.log('Connect created send', payload);
+      this.$socket.emit(EmitterEvents.send, {
+        name: this.name,
+        race: this.race,
+        location: this.locationIndex,
+        text: payload,
+      });
     });
   },
 
@@ -251,12 +309,14 @@ export default {
   methods: {
     ...mapActions({
       setApiState: 'api/setApiState',
+      onUseAction: 'api/onUse',
       setPersistState: 'persist/setPersistState',
+      getConfig: 'persist/getConfig',
     }),
 
     // Произошло соединение с сервером
     onConnect() {
-      console.log('Connect Запускаем процесс!!!');
+      console.log('Connect: запускаем процесс!!!');
     },
 
     // Новый игрок
@@ -269,7 +329,7 @@ export default {
 
     // На подтверждение старого игрока
     onUpdatePlayer(player) {
-      console.log('Connect onUpdatePlayer', player);
+      // console.log('Connect onUpdatePlayer', player);
       if (this.isEnter) {
         // Устанавливаем позицию игрока
         this.setStart(player);
@@ -294,7 +354,7 @@ export default {
 
     // Заход в игру
     onEnter(player) {
-      console.log('Connect onEnter', player);
+      // console.log('Connect onEnter', player);
       this.setPersistState({
         field: 'id',
         value: player.id,
@@ -308,14 +368,14 @@ export default {
           value: player.location,
         }).then(() => {
           this.setPersistState({
-              field: 'isPause',
-              value: false,
-            }).then(() => {
-              this.setPersistState({
-                field: 'isEnter',
-                value: true,
-              });
+            field: 'isPause',
+            value: false,
+          }).then(() => {
+            this.setPersistState({
+              field: 'isEnter',
+              value: true,
             });
+          });
         });
       });
     },
@@ -352,7 +412,7 @@ export default {
         this.counter = 0;
         return {
           ...JSON.parse(JSON.stringify(this.updates)),
-          time: Math.round(new Date().getTime() / 1000.0),
+          time: Math.round(new Date().getTime() / 1000),
         };
       }
       return JSON.parse(JSON.stringify(this.updates));
@@ -389,6 +449,16 @@ export default {
     explosion(message) {
       // console.log('Connect explosion()', message);
       this.$socket.emit(EmitterEvents.explosion, message);
+    },
+
+    // На подьем флага
+    onPoint(payload) {
+      if (this.id === payload.id) {
+        this.setApiState({
+          field: 'exp',
+          value: payload.exp,
+        });
+      }
     },
 
     // На ответ на взрыв - прилетел урон?
@@ -486,12 +556,41 @@ export default {
       }
     },
 
+    // Переход на другую локацию
     relocation(direction) {
       this.$socket.emit(EmitterEvents.relocation, {
         id: this.id,
         location: this.location,
         direction,
       });
+    },
+
+    // Реагировать на ответ на подбор
+    onPick(message) {
+      // console.log('Connect onPick()', message);
+      // Если это клиент который забрал вещь - устанавливаем опыт
+      this.$socket.emit(EmitterEvents.onOnPick, message);
+      if (this.id === message.user) {
+        if (message.exp)
+          this.setApiState({
+            field: 'exp',
+            value: message.exp,
+          });
+
+        if (message.type === Picks.dead) {
+          this.setPersistState({
+            field: 'toxic',
+            value: this.toxic + this.config.races[message.target].toxic,
+          });
+        }
+      }
+    },
+
+    // На ответ на применение вещи
+    onUse(message) {
+      // console.log('Connect onUse()', message);
+      // Если это клиент который использовал вещь - устанавливаем опыт
+      if (this.id === message.user) this.onUseAction(message);
     },
   },
 };

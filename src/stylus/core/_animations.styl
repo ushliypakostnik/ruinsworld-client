@@ -19,13 +19,13 @@
     opacity 0
 
   15%
-    opacity 0.75
+    opacity 0.5
 
   30%
     opacity 0
 
   45%
-    opacity 0.5
+    opacity 0.33
 
   60%
     opacity 0
@@ -38,6 +38,19 @@
 
 .effect
   animation effect ($effects.duration * 15) infinite
+
+@keyframes effect-scale
+  0%
+    opacity 0
+
+  50%
+    opacity 1
+
+  100%
+    opacity 0
+
+.effect-scale
+  animation effect-scale ($effects.duration * 5) infinite
 
 
 // Vue classes for animation

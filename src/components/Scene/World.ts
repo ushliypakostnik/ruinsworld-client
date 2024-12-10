@@ -4,10 +4,18 @@ import * as THREE from 'three';
 import type { Group, Mesh } from 'three';
 import type { ISelf } from '@/models/modules';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import type { IShot, IUnitInfo, IHitsUpdate, ILocation } from '@/models/api';
+import type { IShot, IUnitInfo, IHitsUpdate } from '@/models/api';
 
 // Constants
-import { Audios, Names, Textures } from '@/utils/constants';
+import {
+  Races,
+  Audios,
+  Names,
+  Textures,
+  Picks,
+  Things as ThingsEnum,
+  LANGUAGES,
+} from '@/utils/constants';
 import { EmitterEvents } from '@/models/api';
 
 // Modules
@@ -18,6 +26,7 @@ import Shots from '@/components/Scene/World/Weapon/Shots';
 import Lights from '@/components/Scene/World/Weapon/Lights';
 import Explosions from '@/components/Scene/World/Weapon/Explosions';
 import Bloods from '@/components/Scene/World/Atmosphere/Bloods';
+import Things from '@/components/Scene/World/Atmosphere/Things';
 import Octree from '@/components/Scene/World/Math/Octree';
 
 // Utils
@@ -31,6 +40,7 @@ export default class World {
   private _pseudo!: Mesh;
   private _list!: IUnitInfo[];
   private _deads!: Mesh[];
+  private _tngs!: Mesh[];
 
   // Modules
   private _athmosphere: Atmosphere;
@@ -39,8 +49,12 @@ export default class World {
   private _lights: Lights;
   private _explosions: Explosions;
   private _bloods: Bloods;
+  private _things: Things;
   private _npc: NPC;
   private _time = 0;
+  private _time2 = 0;
+  private _number!: number;
+  private _string!: string;
 
   constructor() {
     // Modules
@@ -50,10 +64,12 @@ export default class World {
     this._lights = new Lights();
     this._explosions = new Explosions();
     this._bloods = new Bloods();
+    this._things = new Things();
     this._npc = new NPC();
 
     this._group = new THREE.Group();
     this._deads = [];
+    this._tngs = [];
   }
 
   public init(self: ISelf): void {
@@ -70,6 +86,7 @@ export default class World {
       this._lights.init(self);
       this._explosions.init(self);
       this._bloods.init(self);
+      this._things.init(self);
 
       // Реагировать на открытие двери
       emitter.on(EmitterEvents.door, (door) => {
@@ -79,6 +96,12 @@ export default class World {
       // Реагировать на необходимость обновить двери
       emitter.on(EmitterEvents.doors, () => {
         this._updateOctre4(self);
+      });
+
+      // Игрок поставил флаг на контрольной точке
+      emitter.on(EmitterEvents.point, (payload: any) => {
+        // console.log('World EmitterEvents.point', payload);
+        this._athmosphere.setFlag(payload.race);
       });
 
       // Реагировать на новый труп
@@ -92,23 +115,113 @@ export default class World {
         }
       });
 
-      // Реагировать на ответ на подбор
-      emitter.on(EmitterEvents.onPick, (message: any) => {
+      // Реагировать на новую вещь
+      emitter.on(EmitterEvents.addThing, (message: any) => {
         this._pseudo = self.scene.getObjectByProperty(
           'uuid',
-          message.uuid as string,
+          message as string,
         ) as Mesh;
         if (this._pseudo) {
-          this._deads = this._deads.filter((box) => box.uuid !== message.uuid);
-          this._pseudo.removeFromParent();
+          this._tngs.push(this._pseudo);
         }
+      });
 
-        self.store.dispatch('api/setApiState', {
-          field: 'exp',
-          value: message.exp,
-        });
+      // Реагировать на удаление вещи
+      emitter.on(EmitterEvents.removeThing, (id: any) => {
+        // console.log('World EmitterEvents.removeThing!!!', id);
+        this._tngs = this._tngs.filter((box) => box.uuid !== id);
+      });
+
+      // На ответ на сообщение в чат
+      emitter.on(EmitterEvents.onSend, (payload: any) => {
+        // А вот и коряка!!!))
+        if (self.store.getters['persist/language'] === LANGUAGES[0]) {
+          if (payload.race === Races.reptiloid) this._string = 'Reptiloid';
+          else this._string = 'Russian rebel';
+        } else {
+          if (payload.race === Races.reptiloid) this._string = 'Рептилод';
+          else this._string = 'Руский Повстанец';
+        }
+        self.events.messagesByIdDispatchHelper(
+          self,
+          '',
+          6,
+          this._string +
+            ' ' +
+            payload.name +
+            ' на ' +
+            payload.location +
+            ': ' +
+            payload.text,
+        );
+      });
+
+      // Реагировать на подбор
+      emitter.on(EmitterEvents.pick, (message: any) => {
+        // console.log('World EmitterEvents.pick!!!', message);
+        this._removeObject(message);
+
+        if (message.type === Picks.thing) {
+          switch (message.target) {
+            case ThingsEnum.grenades:
+              this._number =
+                self.store.getters['persist/grenades'] +
+                self.store.getters['persist/config'].things[ThingsEnum.grenades]
+                  .pick;
+              if (
+                this._number <=
+                self.store.getters['persist/config'].things[ThingsEnum.grenades]
+                  .max
+              ) {
+                self.store.dispatch('persist/setPersistState', {
+                  field: 'grenades',
+                  value: this._number,
+                });
+              } else {
+                self.store.dispatch('persist/setPersistState', {
+                  field: 'grenades',
+                  value:
+                    self.store.getters['persist/config'].things[
+                      ThingsEnum.grenades
+                    ].max,
+                });
+              }
+              break;
+            case ThingsEnum.vodka:
+              self.store.dispatch('persist/setPersistState', {
+                field: 'vodka',
+                value: self.store.getters['persist/vodka'] + 1,
+              });
+              break;
+            case ThingsEnum.stew:
+              self.store.dispatch('persist/setPersistState', {
+                field: 'stew',
+                value: self.store.getters['persist/stew'] + 1,
+              });
+              break;
+          }
+        }
+      });
+
+      // Реагировать на ответ на подбор
+      emitter.on(EmitterEvents.onOnPick, (message: any) => {
+        // console.log('World EmitterEvents.onOnPick!!!', message);
+        if (message.user !== self.store.getters['persist/id'])
+          this._removeObject(message);
       });
     });
+  }
+
+  // Удаление после ответа на подбор
+  private _removeObject(message: any) {
+    switch (message.type) {
+      case Picks.dead:
+        this._deads = this._deads.filter((box) => box.uuid !== message.uuid);
+        break;
+      case Picks.thing:
+        this._tngs = this._tngs.filter((box) => box.uuid !== message.uuid);
+        break;
+    }
   }
 
   // Улучшение после того как локация построена
@@ -212,18 +325,22 @@ export default class World {
     this._group.remove();
   }
 
+  // Взять живых видимых игроком игроков и неписей
   private _getNotDeadVisibleUnits(): IUnitInfo[] {
     return this._players.getList().concat(this._npc.getList());
   }
 
+  // Пиф-паф!
   public shot(self: ISelf): IShot | null {
     return this._players.shot(self);
   }
 
+  // Ответ на выстрел
   public onShot(self: ISelf, shot: IShot): void {
     this._shots.onShot(self, shot);
   }
 
+  // Прилетел урон
   public onHit(self: ISelf, ids: IHitsUpdate): void {
     // console.log('World onHit: ', ids);
     this._players.onHit(self, ids.users);
@@ -244,12 +361,21 @@ export default class World {
       this._time = 0;
     }
 
+    if (!self.store.getters['persist/isGameOver']) {
+      this._time2 += self.events.delta;
+      if (this._time2 > 1) {
+        this._players.check(self, this._athmosphere.zones);
+        this._time2 = 0;
+      }
+    }
+
     this._players.animate(
       self,
       this._athmosphere.world
         .concat(this._athmosphere.doors)
         .concat(this._athmosphere.point)
-        .concat(this._deads),
+        .concat(this._deads)
+        .concat(this._tngs),
     );
     this._npc.animate(self);
     this._athmosphere.animate(self);
@@ -257,5 +383,6 @@ export default class World {
     this._lights.animate(self);
     this._explosions.animate(self);
     this._bloods.animate(self);
+    this._things.animate(self);
   }
 }

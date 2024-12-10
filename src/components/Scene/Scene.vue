@@ -10,7 +10,7 @@ import { key } from '@/store';
 import * as THREE from 'three';
 
 // Constants
-import { Audios, Colors, DESIGN } from '@/utils/constants';
+import { Audios, Colors, DESIGN, Things } from '@/utils/constants';
 
 // Emmiter
 import emitter from '@/utils/emitter';
@@ -92,6 +92,10 @@ export default defineComponent({
     const isRun = computed(() => store.getters['persist/isRun']);
     const isOptical = computed(() => store.getters['not/isOptical']);
     const isMap = computed(() => store.getters['not/isMap']);
+    const isHelp = computed(() => store.getters['not/isHelp']);
+    const isChat = computed(() => store.getters['not/isChat']);
+    const location = computed(() => store.getters['api/location']);
+    const text = computed(() => store.getters['not/text']);
 
     // Utils
     const keys: KeysState = reactive({});
@@ -135,10 +139,12 @@ export default defineComponent({
       // Controls
       controls = new PointerLockControls(camera, renderer.domElement);
       controls.addEventListener('unlock', () => {
-        store.dispatch('persist/setPersistState', {
-          field: 'isPause',
-          value: true,
-        });
+        if (!isHelp.value && !isChat.value && !isMap.value) {
+          store.dispatch('persist/setPersistState', {
+            field: 'isPause',
+            value: true,
+          });
+        }
       });
       if (isPause.value || isGameOver.value) controls.unlock();
       else controls.lock();
@@ -170,22 +176,68 @@ export default defineComponent({
     // Клавиша клавиатуры нажата
     onKeyDown = (event) => {
       keys[event.code] = true;
-      switch (event.keyCode) {
-        default:
-          break;
-      }
     };
 
     // Клавиша клавиатуры отпущена
     onKeyUp = (event) => {
       keys[event.code] = false;
+
+      // console.log('Scene onKeyUp code: ', event.keyCode);
+
       switch (event.keyCode) {
+        case 49: // 1
+          if (
+            isEnter.value &&
+            !isGameOver.value &&
+            !isPause.value &&
+            !isChat.value &&
+            !isHelp.value
+          ) {
+            if (store.getters['persist/vodka'] > 0) {
+              store.dispatch('persist/setPersistState', {
+                field: 'vodka',
+                value: store.getters['persist/vodka'] - 1,
+              });
+              emitter.emit(EmitterEvents.use, {
+                user: store.getters['persist/id'],
+                thing: Things.vodka,
+                location: location.value,
+              });
+              self.helper.pickDispatchHelper(self);
+            } else self.audio.replayHeroSound(Audios.click);
+          }
+          break;
+
+        case 50: // 2
+          if (
+            isEnter.value &&
+            !isGameOver.value &&
+            !isPause.value &&
+            !isChat.value &&
+            !isHelp.value
+          ) {
+            if (store.getters['persist/stew'] > 0) {
+              store.dispatch('persist/setPersistState', {
+                field: 'stew',
+                value: store.getters['persist/stew'] - 1,
+              });
+              emitter.emit(EmitterEvents.use, {
+                user: store.getters['persist/id'],
+                thing: Things.stew,
+                location: location.value,
+              });
+              self.helper.pickDispatchHelper(self); 
+            } else self.audio.replayHeroSound(Audios.click);
+          }
+          break;
+
         case 16: // Shift
           if (
             isEnter.value &&
             !isGameOver.value &&
             !isPause.value &&
-            isRun.value
+            isRun.value &&
+            !isChat.value
           )
             store.dispatch('persist/setPersistState', {
               field: 'isRun',
@@ -194,7 +246,13 @@ export default defineComponent({
           break;
 
         case 80: // P
-          if (isEnter.value && !isGameOver.value)
+          if (
+            isEnter.value &&
+            !isGameOver.value &&
+            !isHelp.value &&
+            !isMap.value &&
+            !isChat.value
+          )
             store.dispatch('persist/setPersistState', {
               field: 'isPause',
               value: !isPause.value,
@@ -202,16 +260,92 @@ export default defineComponent({
           break;
 
         case 77: // M
-          if (isEnter.value && !isPause.value && !isGameOver.value)
+          if (
+            isEnter.value &&
+            !isPause.value &&
+            !isHelp.value &&
+            !isChat.value &&
+            !isGameOver.value
+          )
             store.dispatch('not/setNotState', {
               field: 'isMap',
               value: !isMap.value,
             });
           break;
 
+        case 72: // H
+          if (
+            isEnter.value &&
+            !isPause.value &&
+            !isMap.value &&
+            !isChat.value &&
+            !isGameOver.value
+          )
+            store.dispatch('not/setNotState', {
+              field: 'isHelp',
+              value: !isHelp.value,
+            });
+          break;
+
+        case 82: // R
+          if (
+            isEnter.value &&
+            !isPause.value &&
+            !isMap.value &&
+            !isHelp.value &&
+            !isGameOver.value &&
+            !isChat.value
+          ) {
+            store.dispatch('not/setNotState', {
+              field: 'isChat',
+              value: true,
+            });
+          }
+          break;
+
+        case 17: // Cntr
+          if (
+            isEnter.value &&
+            !isPause.value &&
+            !isMap.value &&
+            !isHelp.value &&
+            !isGameOver.value &&
+            isChat.value
+          ) {
+            store.dispatch('not/setNotState', {
+              field: 'isChat',
+              value: false,
+            });
+          }
+          break;
+
+        case 13: // Enter
+          if (
+            isEnter.value &&
+            !isPause.value &&
+            !isMap.value &&
+            !isHelp.value &&
+            !isGameOver.value &&
+            isChat.value &&
+            text.value.length
+          ) {
+            emitter.emit(EmitterEvents.send, text.value);
+            store.dispatch('not/setNotState', {
+              field: 'isSendByEnter',
+              value: true,
+            });
+          }
+          break;
+
         case 67: // C
         case 18: // Alt
-          if (isEnter.value && !isGameOver.value && !isPause.value) {
+          if (
+            isEnter.value &&
+            !isGameOver.value &&
+            !isPause.value &&
+            !isChat.value &&
+            !isHelp.value
+          ) {
             self.audio.replayHeroSound(Audios.jumpstart);
             store.dispatch('persist/setPersistState', {
               field: 'isHide',
@@ -229,6 +363,8 @@ export default defineComponent({
       if (
         isEnter.value &&
         !isPause.value &&
+        !isHelp.value &&
+        !isChat.value &&
         !isGameOver.value &&
         event.button === 0
       )
@@ -239,7 +375,9 @@ export default defineComponent({
         !isPause.value &&
         !isGameOver.value &&
         event.button === 2 &&
-        !isOptical.value
+        !isOptical.value &&
+        !isHelp.value &&
+        !isChat.value
       )
         store.dispatch('not/setNotState', {
           field: 'isOptical',
@@ -339,18 +477,60 @@ export default defineComponent({
       },
     );
 
+    // Следим за помощью
+    watch(
+      () => store.getters['not/isHelp'],
+      (value) => {
+        if (value) controls.unlock();
+        else controls.lock();
+      },
+    );
+
+    // Следим за подсказкой
+    watch(
+      () => store.getters['not/isChat'],
+      (value) => {
+        if (value) controls.unlock();
+        else controls.lock();
+      },
+    );
+
     // Следим за концом игры
     watch(
       () => store.getters['persist/isGameOver'],
       (value) => {
         setTimeout(() => {
           controls.unlock();
-        }, process.env.VUE_APP_TIMEOUT || 75);
+        }, Number(process.env.VUE_APP_TIMEOUT) || 75);
 
         // Если c оптики - выключаем оптику
         if (!value && isOptical.value) {
           store.dispatch('not/setNotState', {
             field: 'isOptical',
+            value: false,
+          });
+        }
+
+        // Если c подсказки - выключаем подсказку
+        if (value && isHelp.value) {
+          store.dispatch('not/setNotState', {
+            field: 'isHelp',
+            value: false,
+          });
+        }
+
+        // Если c чата - выключаем чат
+        if (value && isChat.value) {
+          store.dispatch('not/setNotState', {
+            field: 'isChat',
+            value: false,
+          });
+        }
+
+        // Если c карты - выключаем карту
+        if (value && isMap.value) {
+          store.dispatch('not/setNotState', {
+            field: 'isMap',
             value: false,
           });
         }
@@ -427,7 +607,7 @@ export default defineComponent({
     watch(
       () => store.getters['api/locationData'],
       (value) => {
-        if (value) {       
+        if (value) {
           // Init modules
           assets.init(self);
           audio.init(self);
@@ -435,7 +615,6 @@ export default defineComponent({
         }
       },
     );
-
 
     // Следим за уроном игрокам и NPC
     watch(

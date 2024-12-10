@@ -16,29 +16,47 @@ import type {
   ILocation,
   ITree,
   IStone,
+  IStone2,
   IGrass,
   IBuild,
+  IPin,
   ITreeScene,
   IGrassScene,
+  IStoneScene,
+  IWell,
+  IZone,
+  ITrash,
 } from '@/models/api';
 import type { Doors } from '@/models/utils';
 
 // Constants
 import { EmitterEvents } from '@/models/api';
-import { Audios, Colors, Names, Textures, DESIGN, Races } from '@/utils/constants';
+import {
+  Audios,
+  Colors,
+  Names,
+  Textures,
+  DESIGN,
+  Races,
+} from '@/utils/constants';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // Services
 import emitter from '@/utils/emitter';
+
+// Modules
+import Zones from '@/components/Scene/World/Atmosphere/Zones';
+import Clouds from '@/components/Scene/World/Atmosphere/Clouds';
 
 export default class Atmosphere {
   public name = Names.atmosphere;
   public world!: Mesh[];
   public doors!: Mesh[];
   public point!: Mesh;
+  public zones!: IZone[];
 
-  private _status!: Races.human | Races.reptiloid | null;
-  private _isStatus!: boolean; 
+  private _zones!: Zones;
+  private _clouds!: Clouds;
   private _redFlag!: Mesh[];
   private _blueFlag!: Mesh[];
   private _doorsStore!: Mesh[];
@@ -48,12 +66,13 @@ export default class Atmosphere {
   private _skyGeometry!: SphereBufferGeometry;
   private _sky!: Mesh;
   private _mesh!: Mesh;
-  private _mesh2!: Mesh;
+  private _mountains!: Mesh;
   private _model!: Group;
   private _model2!: Group;
   private _modelClone!: Group;
   private _modelClone2!: Group;
   private _trees: ITreeScene[] = [];
+  private _stones2: IStoneScene[] = [];
   private _grasses: IGrassScene[] = [];
   private _ambient!: AmbientLight;
   private _index!: number;
@@ -68,10 +87,14 @@ export default class Atmosphere {
   private _isFirst = false;
   private _location!: ILocation;
   private _number!: number;
-  private _number2!: number;
   private _pseudo!: Mesh;
   private _pseudoClone!: Mesh;
   private _color!: Colors;
+  private _status!: Races.human | Races.reptiloid | null;
+  private _isStatus!: boolean;
+  private _group!: Group;
+  private _group2!: Group;
+  private _groupClone!: Group;
 
   // Освещение - "время суток"
   private _DAY = [
@@ -192,13 +215,14 @@ export default class Atmosphere {
   public init(self: ISelf): void {
     this._index = self.store.getters['persist/day'];
     this._location = self.store.getters['api/locationData'];
+    this.zones = [];
     this.world = [];
     this.doors = [];
     this._doorsStore = [];
     this._redFlag = [];
     this._blueFlag = [];
-    this._isStatus = false;
     this._bus = [];
+    this._isStatus = false;
 
     // console.log('Atmosphere init: ', this._location);
 
@@ -361,18 +385,18 @@ export default class Atmosphere {
           position.setXYZ(i, vertex.x, vertex.y, vertex.z);
         }
 
-        this._mesh2 = new THREE.Mesh(
+        this._mountains = new THREE.Mesh(
           self.helper.geometry,
           new THREE.MeshStandardMaterial({
             map: map,
             color: this._DAY[this._index].ambient,
           }),
         );
-        this._mesh2.rotation.x = -Math.PI / 2;
-        this._mesh2.position.set(0, -1.1, 0);
-        this._mesh2.updateMatrix();
+        this._mountains.rotation.x = -Math.PI / 2;
+        this._mountains.position.set(0, -1.1, 0);
+        this._mountains.updateMatrix();
 
-        self.scene.add(this._mesh2);
+        self.scene.add(this._mountains);
 
         self.render();
 
@@ -416,7 +440,7 @@ export default class Atmosphere {
       );
       this._pseudo.position.y = 4;
       this._pseudo.name = Names.points;
-      this._pseudo.visible = false;
+      this._pseudo.visible = process.env.VUE_APP_TEST_MODE === '1';
       self.scene.add(this._pseudo);
       this.point = this._pseudo;
 
@@ -472,7 +496,6 @@ export default class Atmosphere {
       self.helper.loaderLocationDispatchHelper(self.store, Names.grasses);
 
       this._model = self.assets.traverseHelper(self, model).scene;
-      this._model.castShadow = true;
       this._model.rotation.x = -Math.PI / 2;
 
       this._model2 = this._model.clone();
@@ -499,7 +522,7 @@ export default class Atmosphere {
       self.helper.loaderLocationDispatchHelper(self.store, Names.grasses, true);
     });
 
-    // Stones
+    // Горы
     self.assets.GLTFLoader.load('./images/models/stones.glb', (model: GLTF) => {
       self.helper.loaderLocationDispatchHelper(self.store, Names.stones);
 
@@ -533,9 +556,10 @@ export default class Atmosphere {
         new THREE.BoxBufferGeometry(4.5, 3.25, 6),
         self.assets.getMaterial(Textures.pseudo),
       );
-      this._pseudo.visible = false;
+      this._pseudo.visible = process.env.VUE_APP_TEST_MODE === '1';
 
-      this._location.stones.forEach((stone: IStone) => {
+      // Далекие горы
+      this._location.stones1.forEach((stone: IStone) => {
         this._modelClone = this._model.clone();
         this._modelClone.position.set(
           stone.x,
@@ -546,34 +570,33 @@ export default class Atmosphere {
         this._modelClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
         self.scene.add(this._modelClone);
+      });
 
-        this._pseudoClone = this._pseudo.clone();
-        this._number = stone.scaleY < 4 ? 1.3 : stone.scaleY > 6 ? 1.2 : 1.1;
-        this._number2 =
-          stone.scaleY > 10 ? 0.65 : stone.scaleY > 7 ? 0.75 : 0.85;
-        this._pseudoClone.position.set(
+      // Очень далекие горы
+      this._location.stones2.forEach((stone: IStone) => {
+        this._modelClone = this._model.clone();
+        this._modelClone.position.set(
           stone.x,
           -1 * (3 / stone.scaleY) * stone.scaleY - 1,
           stone.z,
         );
-        this._pseudoClone.scale.set(
-          stone.scaleX * this._number,
-          stone.scaleY * this._number2,
-          stone.scaleZ * this._number,
-        );
-        this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
+        this._modelClone.scale.set(stone.scaleX, stone.scaleY, stone.scaleZ);
+        this._modelClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
-        this.world.push(this._pseudoClone);
-        self.scene.add(this._pseudoClone);
+        self.scene.add(this._modelClone);
+        this._stones2.push({
+          model: this._modelClone,
+          x: stone.x,
+          z: stone.z,
+        });
       });
 
       self.helper.loaderLocationDispatchHelper(self.store, Names.stones, true);
     });
 
-    // Stones 2
-    /*
+    // Столбы
     self.assets.GLTFLoader.load(
-      './images/models/stones2--1.glb',
+      './images/models/stones2.glb',
       (model: GLTF) => {
         self.helper.loaderLocationDispatchHelper(self.store, Names.stones2);
 
@@ -606,9 +629,9 @@ export default class Atmosphere {
           new THREE.BoxBufferGeometry(1, 3, 1),
           self.assets.getMaterial(Textures.pseudo),
         );
-        // this._pseudo.visible = false;
+        this._pseudo.visible = process.env.VUE_APP_TEST_MODE === '1';
 
-        this._location.stones2.forEach((stone: IStone) => {
+        this._location.stones3.forEach((stone: IStone) => {
           this._addStone(self, stone);
         });
 
@@ -618,47 +641,244 @@ export default class Atmosphere {
           true,
         );
       },
-    ); */
+    );
 
-    // Builds
-    this._location.builds.forEach((build: IBuild) => {
+    // Камешки
+    this._location.stones4.forEach((stone: IStone2) => {
       this._pseudoClone = new THREE.Mesh(
-        new THREE.BoxBufferGeometry(build.scale, build.scaleY, build.scale),
+        new THREE.BoxBufferGeometry(stone.scale, stone.scale, stone.scale),
         self.assets.getMaterial(Textures.concrette),
       );
-      this._pseudoClone.position.set(build.x, build.scaleY * 0.25, build.z);
-      this._pseudoClone.rotateZ(self.helper.degreesToRadians(build.rotateZ));
-      this._pseudoClone.rotateX(self.helper.degreesToRadians(build.rotateX));
-      this._pseudoClone.rotateY(self.helper.degreesToRadians(build.rotateY));
+      this._pseudoClone.position.set(stone.x, stone.scale / 2 - 1, stone.z);
+      this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
+      this._pseudoClone.rotateX(self.helper.degreesToRadians(stone.rotateX));
 
-      this.world.push(this._pseudoClone);
       self.scene.add(this._pseudoClone);
     });
+
+    // Железяки
+    this._location.stones5.forEach((pin: IPin) => {
+      this._pseudoClone = new THREE.Mesh(
+        new THREE.BoxBufferGeometry(0.25, pin.scale, 0.25),
+        pin.color === 1
+          ? self.assets.getMaterialWithColor(
+              Textures.metallDark,
+              0x222222 as Colors,
+            )
+          : self.assets.getMaterial(Textures.metall2),
+      );
+      this._pseudoClone.position.set(pin.x, pin.scale / 2 - 1.25, pin.z);
+      this._pseudoClone.rotateY(self.helper.degreesToRadians(pin.rotateY));
+      this._pseudoClone.rotateX(self.helper.degreesToRadians(pin.rotateX));
+
+      self.scene.add(this._pseudoClone);
+    });
+
+    // Builds
+    self.assets.GLTFLoader.load('./images/models/builds.glb', (model: GLTF) => {
+      self.helper.loaderLocationDispatchHelper(self.store, 'builds' as Names);
+
+      this._model = self.assets.traverseHelper(self, model).scene;
+
+      this._location.builds.forEach((build: IBuild) => {
+        this._modelClone = this._model.clone();
+        this._pseudoClone = new THREE.Mesh(
+          new THREE.BoxBufferGeometry(
+            build.scale * 1.05,
+            build.scaleY * 2.15,
+            build.scale * 1.05,
+          ),
+          self.assets.getMaterial(Textures.pseudo),
+        );
+        this._modelClone.scale.set(
+          build.scale / 20,
+          (build.scaleY * 0.25) / 20,
+          build.scale / 20,
+        );
+        this._modelClone.position.set(build.x, build.scaleY * -0.25, build.z);
+        this._pseudoClone.position.set(build.x, build.scaleY * -0.25, build.z);
+        this._pseudoClone.rotateZ(self.helper.degreesToRadians(build.rotateZ));
+        this._modelClone.rotateZ(self.helper.degreesToRadians(build.rotateZ));
+        this._pseudoClone.rotateX(self.helper.degreesToRadians(build.rotateX));
+        this._modelClone.rotateX(self.helper.degreesToRadians(build.rotateX));
+        this._pseudoClone.rotateY(self.helper.degreesToRadians(build.rotateY));
+        this._modelClone.rotateY(self.helper.degreesToRadians(build.rotateY));
+        this._pseudoClone.visible = process.env.VUE_APP_TEST_MODE === '1';
+
+        self.scene.add(this._modelClone);
+        this.world.push(this._pseudoClone);
+      });
+      self.helper.loaderLocationDispatchHelper(
+        self.store,
+        'builds' as Names,
+        true,
+      );
+    });
+
+    // Wells
+    self.assets.GLTFLoader.load('./images/models/well.glb', (model: GLTF) => {
+      self.helper.loaderLocationDispatchHelper(self.store, 'wells' as Names);
+
+      this._model = self.assets.traverseHelper(self, model).scene;
+
+      this._pseudo = new THREE.Mesh(
+        new THREE.BoxBufferGeometry(6, 0.75, 6),
+        self.assets.getMaterial(Textures.pseudo),
+      );
+      this._pseudo.visible = process.env.VUE_APP_TEST_MODE === '1';
+      this._location.wells.forEach((well: IWell) => {
+        this._modelClone = this._model.clone();
+        this._modelClone.scale.set(1, 0.25, 1);
+        this._modelClone.position.set(well.x, -0.9, well.z);
+        this._modelClone.rotateY(self.helper.degreesToRadians(well.rotate));
+
+        this._pseudoClone = this._pseudo.clone();
+        this._pseudoClone.position.set(well.x, 0, well.z);
+        this._pseudoClone.rotateY(self.helper.degreesToRadians(well.rotate));
+        this._pseudoClone.name = 'well';
+
+        self.scene.add(this._modelClone);
+        this.world.push(this._pseudoClone);
+        self.scene.add(this._pseudoClone);
+      });
+      self.helper.loaderLocationDispatchHelper(
+        self.store,
+        'wells' as Names,
+        true,
+      );
+    });
+
+    // Отравленные зоны
+    this._pseudo = new THREE.Mesh(
+      new THREE.CircleBufferGeometry(1, 32),
+      self.assets.getMaterial(Textures.zone),
+    );
+    this._pseudo.rotation.x = -Math.PI / 2;
+    this._location.zones.forEach((zone: IZone) => {
+      this._pseudoClone = this._pseudo.clone();
+
+      this._pseudoClone.scale.set(zone.radius, zone.radius, zone.radius);
+      this._pseudoClone.position.set(zone.x, -0.995, zone.z);
+      self.scene.add(this._pseudoClone);
+      this.zones.push(zone);
+    });
+    this._zones = new Zones(this.zones);
+    this._zones.init(self);
+
+    // Помойки
+    this._pseudo = new THREE.Mesh(
+      new THREE.ConeBufferGeometry(1, 8),
+      self.assets.getMaterial(Textures.trash),
+    );
+    // this._pseudo.rotation.x = -Math.PI / 2;
+    this._location.trashes.forEach((trash: ITrash) => {
+      this._pseudoClone = this._pseudo.clone();
+
+      this._pseudoClone.scale.set(trash.scale, trash.scaleY, trash.scale);
+      this._pseudoClone.position.set(trash.x, -1, trash.z);
+      this._pseudoClone.rotateY(self.helper.degreesToRadians(trash.rotate));
+
+      self.scene.add(this._pseudoClone);
+      this.world.push(this._pseudoClone);
+    });
+
+    // Облака
+    this._clouds = new Clouds();
+    this._clouds.init(self);
+
+    // Дороги
+    if (!(this._location.x === 0 && this._location.y === 0)) {
+      this._group = new THREE.Group();
+      this._group2 = new THREE.Group();
+
+      this._mesh = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(
+          15,
+          15,
+          2,
+          2,
+        ),
+        self.assets.getMaterial(Textures.road),
+      );
+      this._mesh.rotation.x = -Math.PI / 2;
+      this._group.add(this._mesh);
+  
+      this._pseudo = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(
+          7.5,
+          0.5,
+          2,
+          2,
+        ),
+        self.assets.getMaterial(Textures.yellow),
+      );
+      this._pseudo.rotation.x = -Math.PI / 2;
+      this._pseudo.position.y = 0.1;
+      this._group.add(this._pseudo);
+
+      this._mesh = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(
+          15,
+          15,
+          2,
+          2,
+        ),
+        self.assets.getMaterial(Textures.road),
+      );
+      this._mesh.rotation.x = -Math.PI / 2;
+      this._group2.add(this._mesh);
+
+      this._pseudo = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(
+          0.5,
+          7.5,
+          2,
+          2,
+        ),
+        self.assets.getMaterial(Textures.yellow),
+      );
+      this._pseudo.rotation.x = -Math.PI / 2;
+      this._pseudo.position.y = 0.1;
+      this._group2.add(this._pseudo);
+
+      for (let i = 0; i < 19; ++i) {
+        this._groupClone = this._group.clone();
+        this._groupClone.position.set(27.5 + (i *  15), -0.95, 0);
+        self.scene.add(this._groupClone);
+
+        this._groupClone = this._group.clone();
+        this._groupClone.position.set(-27.5 - (i *  15), -0.95, 0);
+        self.scene.add(this._groupClone);
+
+        this._groupClone = this._group2.clone();
+        this._groupClone.position.set(0, -0.95, 27.5 + (i *  15));
+        self.scene.add(this._groupClone);
+
+        this._groupClone = this._group2.clone();
+        this._groupClone.position.set(0, -0.95, -27.5 - (i *  15));
+        self.scene.add(this._groupClone);
+      }
+    }
 
     self.helper.loaderLocationDispatchHelper(self.store, this.name, true);
   }
 
-  /*
   private _addStone(self: ISelf, stone: IStone) {
     this._modelClone = this._model.clone();
-    this._modelClone.position.set(stone.x, stone.scaleY / -2, stone.z);
+    this._modelClone.position.set(stone.x, stone.scaleY / -2 - 2.5, stone.z);
     this._modelClone.scale.set(stone.scaleX, stone.scaleY, stone.scaleZ);
     this._modelClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
     self.scene.add(this._modelClone);
 
     this._pseudoClone = this._pseudo.clone();
-    this._pseudoClone.position.set(stone.x, stone.scaleY / 6, stone.z);
-    this._pseudoClone.scale.set(
-      stone.scaleX * 2,
-      stone.scaleY,
-      stone.scaleZ * 2,
-    );
+    this._pseudoClone.position.set(stone.x, stone.scaleY * 2 - 2.5, stone.z);
+    this._pseudoClone.scale.set(stone.scaleX, stone.scaleY * 1.8, stone.scaleZ);
     this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
 
     this.world.push(this._pseudoClone);
     self.scene.add(this._pseudoClone);
-  } */
+  }
 
   private _setRandom(self: ISelf) {
     this._randomX = self.helper.randomInteger(1, 5);
@@ -670,15 +890,16 @@ export default class Atmosphere {
     });
   }
 
-  private setFlag(self: ISelf) {
-    if (this._status === Races.human) {
+  // Смена флага на локации
+  public setFlag(status: Races.human | Races.reptiloid | null) {
+    if (status === Races.human) {
       this._redFlag.forEach((mesh) => {
         mesh.visible = true;
       });
       this._blueFlag.forEach((mesh) => {
         mesh.visible = false;
       });
-    } else if (this._status === Races.reptiloid) {
+    } else if (status === Races.reptiloid) {
       this._redFlag.forEach((mesh) => {
         mesh.visible = false;
       });
@@ -698,15 +919,36 @@ export default class Atmosphere {
   public animate(self: ISelf): void {
     this._time += self.events.delta;
 
-    if (this._sky) this._sky.rotateY(self.events.delta / 25);
+    this._zones.animate(self);
+    this._clouds.animate(self);
 
     if (!this._isStatus) {
       this._isStatus = true;
       this._status = self.store.getters['api/game'].point.status;
-      this.setFlag(self);
-    } if (self.store.getters['api/game'].point.status !== this._status) {
+      this.setFlag(this._status);
+    }
+    if (self.store.getters['api/game'].point.status !== this._status) {
       this._status = self.store.getters['api/game'].point.status;
-      this.setFlag(self);
+      this.setFlag(this._status);
+    }
+
+    if (this._sky) {
+      this._sky.rotateY(self.events.delta / 25);
+      this._sky.position.set(self.camera.position.x, 0, self.camera.position.z);
+      this._mountains.position.set(
+        self.camera.position.x,
+        -1.1,
+        self.camera.position.z,
+      );
+
+      // Очень далекие горы
+      this._stones2.forEach((stone: IStoneScene) => {
+        stone.model.position.set(
+          stone.x + self.camera.position.x,
+          stone.model.position.y,
+          stone.z + self.camera.position.z,
+        );
+      });
     }
 
     if (this._trees.length) {
@@ -715,6 +957,8 @@ export default class Atmosphere {
         if (!this._isFirst) this._isFirst = true;
         if (this._direction === 1) this._setRandom(self);
         this._time = 0;
+
+        this._zones.blood(self);
       }
 
       this._trees.forEach((tree) => {

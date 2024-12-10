@@ -9,17 +9,17 @@ import type { IGameUpdates } from '@/models/api';
 
 const initialState: IStoreModule = () => ({
   start: null, // Стартовые данные игрока и мира
-  location: null,
-  locationData: null,
-  game: null,
-  updates: {},
+  location: null, // Идентификатор локации
+  locationData: null, // Данные локации
+  game: null, // Данные игры
+  updates: {}, // Обновления
   health: 100, // Не менять на null!!!
-  isOnHit: false,
+  isOnHit: false, // Под ударом?
   isOnBodyHit: false,
   onHitOthers: { users: [], npc: [] },
   isOnHitOthers: false,
-  map: null,
-  exp: 0,
+  map: null, // Данные карты
+  exp: 0, // Опыт
 });
 const initial = initialState;
 
@@ -31,6 +31,7 @@ const api: Module<IStoreModule, IStore> = {
     start: (state: IStoreModule) => state.start,
     location: (state: IStoreModule) => state.location,
     locationData: (state: IStoreModule) => state.locationData,
+    locationIndex: (state: IStoreModule) => state.locationData.index,
     game: (state: IStoreModule) => state.game,
     updates: (state: IStoreModule) => state.updates,
     health: (state: IStoreModule) => state.health,
@@ -43,7 +44,15 @@ const api: Module<IStoreModule, IStore> = {
   },
 
   actions: {
-    setApiState: ({ commit }, payload: TFieldPayload): void => {
+    setApiState: ({ commit, dispatch }, payload: TFieldPayload): void => {
+      // Смерть от того что кончилось здоровье
+      if (payload.field === 'health' && payload.value < 0)
+        dispatch(
+          'persist/setPersistState',
+          { field: 'isGameOver', value: true },
+          { root: true },
+        );
+
       commit('setApiState', payload);
     },
 
@@ -61,6 +70,11 @@ const api: Module<IStoreModule, IStore> = {
 
     clearMap: ({ commit }): void => {
       commit('clearMap');
+    },
+
+    onUse: ({ commit, dispatch }, payload): void => {
+      commit('onUse', payload);
+      dispatch('persist/onUse', payload.thing, { root: true });
     },
 
     reload: ({ commit }): void => {
@@ -85,7 +99,8 @@ const api: Module<IStoreModule, IStore> = {
           };
       } else state[payload.field] = payload.value;
 
-      if (payload.field === 'isOnHitOthers' && !payload.value) state.onHitOthers = initialState.onHitOthers;
+      if (payload.field === 'isOnHitOthers' && !payload.value)
+        state.onHitOthers = initialState.onHitOthers;
     },
 
     getLocation: (state: IStoreModule, payload): void => {
@@ -101,6 +116,12 @@ const api: Module<IStoreModule, IStore> = {
     clearMap: (state: IStoreModule): void => {
       // console.log('clearMap api store mutation: ', payload);
       state.map = initial.map;
+    },
+
+    onUse: (state: IStoreModule, payload): void => {
+      // console.log('onUse api store mutation: ', payload);
+      state.health = payload.health;
+      state.exp = payload.exp;
     },
 
     reload: (state: IStoreModule): void => {

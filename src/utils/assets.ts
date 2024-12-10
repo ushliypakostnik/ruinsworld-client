@@ -27,7 +27,11 @@ export default class Assets {
   private _metall!: Texture;
   private _metall2!: Texture;
   private _fire!: Texture;
+  private _purple!: Texture;
   private _glass!: Texture;
+  private _go!: Texture;
+  private _trash!: Texture;
+  private _road!: Texture;
 
   // Loaders
   public GLTFLoader: GLTFLoader;
@@ -48,6 +52,8 @@ export default class Assets {
   public jumpend!: AudioBuffer;
   public dead!: AudioBuffer;
   public pick!: AudioBuffer;
+  public click!: AudioBuffer;
+  public gosong!: AudioBuffer;
 
   // World
   public door!: AudioBuffer;
@@ -104,7 +110,11 @@ export default class Assets {
     this._metall = self.helper.textureLoaderHelper(self, Textures.metall);
     this._metall2 = self.helper.textureLoaderHelper(self, Textures.metall2);
     this._fire = self.helper.textureLoaderHelper(self, Textures.fire);
+    this._purple = self.helper.textureLoaderHelper(self, Textures.purple);
     this._glass = self.helper.textureLoaderHelper(self, Textures.glass);
+    this._go = self.helper.textureLoaderHelper(self, Textures.go);
+    this._trash = self.helper.textureLoaderHelper(self, Textures.trash);
+    this._road = self.helper.textureLoaderHelper(self, Textures.road);
 
     // Audio
 
@@ -179,6 +189,20 @@ export default class Assets {
       this.dead = buffer;
 
       self.audio.initAudioByName(self, Audios.dead);
+    });
+
+    this.audioLoader.load(`./audio/${Audios.click}.mp3`, (buffer) => {
+      self.helper.loaderDispatchHelper(self.store, Audios.click, false);
+      this.click = buffer;
+
+      self.audio.initAudioByName(self, Audios.click);
+    });
+
+    this.audioLoader.load(`./audio/${Audios.gosong}.mp3`, (buffer) => {
+      self.helper.loaderDispatchHelper(self.store, Audios.gosong, false);
+      this.gosong = buffer;
+
+      self.audio.initAudioByName(self, Audios.gosong);
     });
 
     // NPC
@@ -351,6 +375,8 @@ export default class Assets {
     self.helper.setAudioToHeroHelper(self, Audios.hit, this.hit);
     self.helper.setAudioToHeroHelper(self, Audios.dead, this.dead);
     self.helper.setAudioToHeroHelper(self, Audios.pick, this.pick);
+    self.helper.setAudioToHeroHelper(self, Audios.click, this.click);
+    self.helper.setAudioToHeroHelper(self, Audios.gosong, this.gosong);
   }
 
   // Texture utils
@@ -386,6 +412,10 @@ export default class Assets {
           child.material = this.getMaterial(Textures.playerblue);
         } else if (child.name.includes(Textures.hole)) {
           child.material = this.getMaterial(Textures.hole);
+        } else if (child.name.includes(Textures.blood)) {
+          child.material = this.getMaterial(Textures.blood);
+        } else if (child.name.includes(Textures.vodka)) {
+          child.material = this.getMaterial(Textures.vodka);
         }
       }
     });
@@ -405,6 +435,14 @@ export default class Assets {
         return this._fire;
       case Textures.glass:
         return this._glass;
+      case Textures.purple:
+        return this._purple;
+      case Textures.go:
+        return this._go;
+      case Textures.trash:
+        return this._trash;
+      case Textures.road:
+        return this._road;
       case Textures.concrette:
       default:
         return this._concrette;
@@ -417,13 +455,19 @@ export default class Assets {
       case Textures.ground:
         return 256;
       case Textures.glass:
+      case Textures.glassspecial:
         return 16;
+      case Textures.road:
+        return 8;
       case Textures.concrette:
       case Textures.concrette2:
       case Textures.fire:
+      case Textures.purple:
+      case Textures.trash:
         return 4;
       case Textures.metall:
       case Textures.metall2:
+      case Textures.metallDark:
         return 2;
     }
     return 2;
@@ -435,7 +479,7 @@ export default class Assets {
     color: Colors,
   ): MeshPhongMaterial | MeshBasicMaterial | MeshStandardMaterial {
     return new THREE.MeshStandardMaterial({
-      map: this.getTexture(name),
+      map: name !== Textures.glassspecial ? this.getTexture(name) : null,
       color,
     });
   }
@@ -445,6 +489,10 @@ export default class Assets {
     name: Textures,
   ): MeshPhongMaterial | MeshBasicMaterial | MeshStandardMaterial {
     switch (name) {
+      case Textures.vodka:
+        return new THREE.MeshStandardMaterial({
+          color: Colors.white,
+        });
       case Textures.pseudo:
         return new THREE.MeshStandardMaterial({
           transparent: true,
@@ -462,6 +510,12 @@ export default class Assets {
           transparent: true,
           opacity: 0.5,
         });
+      case Textures.yellow:
+        return new THREE.MeshStandardMaterial({
+          color: Colors.yellow,
+          transparent: true,
+          opacity: 0.5,
+        });
       case Textures.hole:
         return new THREE.MeshStandardMaterial({
           color: Colors.black,
@@ -476,12 +530,35 @@ export default class Assets {
         return new THREE.MeshStandardMaterial({
           color: Colors.white,
         });
+      case Textures.trash:
+        return new THREE.MeshStandardMaterial({
+          map: this.getTexture(name),
+          color: Colors.white,
+        });
+      case Textures.road:
+        return new THREE.MeshStandardMaterial({
+          map: this.getTexture(name),
+          color: Colors.yellow,
+        });
       case Textures.fire:
         return new THREE.MeshStandardMaterial({
           map: this.getTexture(name),
           color: Colors.white,
           transparent: true,
           opacity: 0,
+        });
+      case Textures.purple:
+        return new THREE.MeshStandardMaterial({
+          map: this.getTexture(name),
+          color: Colors.white,
+          transparent: true,
+          opacity: 0,
+        });
+      case Textures.zone:
+        return new THREE.MeshStandardMaterial({
+          color: Colors.black,
+          transparent: true,
+          opacity: 0.33,
         });
       case Textures.concrette:
         return new THREE.MeshPhongMaterial({
@@ -538,6 +615,8 @@ export default class Assets {
   // Получить громкость по имени
   public getVolumeByName(name: Audios): number {
     switch (name) {
+      case Audios.pick:
+        return 0.2;
       case Audios.jumpend:
       case Audios.steps:
       case Audios.wind:
@@ -548,17 +627,19 @@ export default class Assets {
         return 0.4;
       case Audios.cyborgidle:
       case Audios.orcidle:
+      case Audios.dead:
         return 0.5;
       case Audios.zombieidle:
         return 0.6;
-      case Audios.dead:
       case Audios.mutantsteps:
+      case Audios.click:
         return 0.7;
       case Audios.shot:
       case Audios.hit:
       case Audios.mutantjumpend:
-      case Audios.pick:
         return 0.8;
+      case Audios.light:
+        return 0.9;
       case Audios.cyborghit:
       case Audios.bidensidle:
       case Audios.explosion:
@@ -574,8 +655,8 @@ export default class Assets {
       case Audios.mutantdead:
       case Audios.bidensdead:
       case Audios.bidenshit:
-      case Audios.light:
       case Audios.door:
+      case Audios.gosong:
         return 1;
     }
     return DESIGN.DEFAULT_VOLUME;

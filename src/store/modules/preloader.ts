@@ -6,6 +6,7 @@ import type { IStore, IPreloader } from '@/models/store';
 // API
 import { Races } from '@/utils/constants';
 
+const IS_LOADED = 'IsLoaded';
 const FLAG = 'isGameLoaded';
 
 let stateCopy;
@@ -20,23 +21,27 @@ const initialState: IPreloader = {
   metallIsLoaded: false,
   metall2IsLoaded: false,
   fireIsLoaded: false,
+  purpleIsLoaded: false,
   glassIsLoaded: false,
+  goIsLoaded: false,
+  trashIsLoaded: false,
+  roadIsLoaded: false,
 
   // Models
   weaponEnemiesIsLoaded: false,
   weaponHeroIsLoaded: false,
   weaponNPCIsLoaded: false,
 
-  [`${Races.human}IsLoaded`]: false,
-  [`${Races.reptiloid}IsLoaded`]: false,
+  [`${Races.human}${IS_LOADED}`]: false,
+  [`${Races.reptiloid}${IS_LOADED}`]: false,
 
   // Для теста - выключить в ложь тестируюемую
-  [`${Races.bidens}IsLoaded`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
-  [`${Races.mutant}IsLoaded`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
-  [`${Races.orc}IsLoaded`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
-  [`${Races.zombie}IsLoaded`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
-  [`${Races.soldier}IsLoaded`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
-  [`${Races.cyborg}IsLoaded`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  [`${Races.bidens}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  [`${Races.mutant}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  [`${Races.orc}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  [`${Races.zombie}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  [`${Races.soldier}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  [`${Races.cyborg}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
 
   // Audio
 
@@ -49,6 +54,8 @@ const initialState: IPreloader = {
   jumpendIsLoaded: false,
   hitIsLoaded: false,
   deadIsLoaded: false,
+  clickIsLoaded: false,
+  gosongIsLoaded: false,
 
   // Weapon
   shotIsLoaded: false,
@@ -88,6 +95,11 @@ const initialState: IPreloader = {
   cyborghitIsLoaded: false,
   cyborgdeadIsLoaded: false,
   cyborgstepsIsLoaded: false,
+
+  // Things
+  vodkaIsLoaded: false,
+  grenadesIsLoaded: false,
+  stewIsLoaded: false,
 
   // World build
   heroIsBuild: false,

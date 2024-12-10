@@ -9,13 +9,20 @@ import type {
 } from '@/models/store';
 
 const initialState: IStoreModule = {
-  isOptical: false,
-  isMap: false,
+  isOptical: false, // Оптический прицел?
+  isMap: false, // Карта?
+  isHelp: false, // Подсказака?
+  isChat: false, // Чат?
+  text: '', // Сообщение набираемое в чат
+  isSendByEnter: false, // Сообщение отправлено в чат по Enter?
   message: null, // "Постоянное" cообщение сейчас
   content: null, // Контент постоянного сообщения
   messages: [], // Короткие сообщения сейчас
   isReload: false, // Перед принудительной перезагрузкой
-  isPick: false, // Подбор предмета
+  isPick: false, // Подбор или использование предмета
+  isMove: false, // Движение?
+  isNotJump: false, // Прыжок?
+  shotTime: 0, // Время межде выстрелами?
 };
 
 let array: Array<TEventMessagePayload> = [];
@@ -27,11 +34,18 @@ const not: Module<IStoreModule, IStore> = {
   getters: {
     isOptical: (state: IStoreModule) => state.isOptical,
     isMap: (state: IStoreModule) => state.isMap,
+    isHelp: (state: IStoreModule) => state.isHelp,
+    isChat: (state: IStoreModule) => state.isChat,
+    text: (state: IStoreModule) => state.text,
+    isSendByEnter: (state: IStoreModule) => state.isSendByEnter,
     message: (state: IStoreModule) => state.message,
     content: (state: IStoreModule) => state.content,
     messages: (state: IStoreModule) => state.messages,
     isReload: (state: IStoreModule) => state.isReload,
     isPick: (state: IStoreModule) => state.isPick,
+    isMove: (state: IStoreModule) => state.isMove,
+    isNotJump: (state: IStoreModule) => state.isNotJump,
+    shotTime: (state: IStoreModule) => state.shotTime,
   },
 
   actions: {

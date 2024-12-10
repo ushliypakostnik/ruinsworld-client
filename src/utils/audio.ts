@@ -134,6 +134,7 @@ export default class AudioBus {
     if (isHeroSound) {
       switch (name) {
         case Audios.wind:
+        case Audios.steps:
           return true;
         default:
           return false;
@@ -165,8 +166,8 @@ export default class AudioBus {
       audio.setBuffer(self.assets.getAudio(name));
       audio.setVolume(self.assets.getVolumeByName(name));
       audio.setLoop(isLoop);
-      audio.setRefDistance(process.env.VUE_APP_SOUND_REF);
-      audio.setMaxDistance(process.env.VUE_APP_SOUND_MAX);
+      audio.setRefDistance(Number(process.env.VUE_APP_SOUND_REF));
+      audio.setMaxDistance(Number(process.env.VUE_APP_SOUND_MAX));
       audio.setRolloffFactor(1);
     } catch(e) {
       console.log('audio bus ERROR: ', e);

@@ -15,21 +15,28 @@
           <div class="layout__effect" />
 
           <div class="layout__dialog">
-            <div class="layout__header">{{ $t('name') }}</div>
+            <div class="layout__header layout__header--noenter">
+              {{ $t('name') }}
+            </div>
+            <div div class="layout__version">v{{ config.version }}</div>
 
             <LangSwitch />
 
-            <div class="layout__title">{{ $t('select') }}</div>
+            <div class="layout__title">{{ $t('race') }}</div>
 
             <div
-              class="layout__select"
+              class="layout__race"
               :class="{
-                'layout__select--human': select === 'human',
-                'layout__select--reptiloid': select === 'reptiloid',
+                'layout__race--human': race === Races.human,
+                'layout__race--reptiloid': race === Races.reptiloid,
               }"
             >
-              <div @click="setRace('human')"><div /></div>
-              <div @click="setRace('reptiloid')"><div /></div>
+              <div @click="setRace(Races.human)">
+                <div />
+              </div>
+              <div @click="setRace(Races.reptiloid)">
+                <div />
+              </div>
             </div>
 
             <div class="layout__title">{{ $t('nick') }}</div>
@@ -38,13 +45,16 @@
               class="layout__input"
               v-model="nickname"
               maxlength="25"
-              pattern="^[a-zA-Z]+$"
+              @input="filter"
             />
 
             <div class="layout__buttons">
               <button
                 class="layout__button layout__button--enter"
-                :class="{ 'layout__button--disabled': nickname.length === 0 }"
+                :class="{
+                  'layout__button--disabled':
+                    !nickname || nickname.length === 0,
+                }"
                 type="button"
                 @click.prevent.stop="enter"
               >
@@ -52,6 +62,12 @@
               </button>
             </div>
 
+            <div class="layout__link">
+              {{ $t('link') }}:
+              <a href="https://t.me/ruinsworld" target="__blank"
+                >t.me/ruinsworld</a
+              >
+            </div>
             <div class="layout__copy">
               <p>{{ $t('copyright') }}</p>
             </div>
@@ -68,18 +84,111 @@
         </div>
 
         <div class="layout__scales">
+          <div class="layout__scales-item layout__scales-item--vodka">
+            <div class="layout__scales-item-icon">
+              <svg
+                id="_Слой_1"
+                data-name="Слой 1"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 89.5 140"
+              >
+                <path
+                  d="m76.85,39.21h-20.56V0h-23.09v39.21H12.64c-6.98,0-12.64,5.66-12.64,12.64v75.5c0,6.98,5.66,12.64,12.64,12.64h64.21c6.98,0,12.64-5.66,12.64-12.64V51.86c0-6.98-5.66-12.64-12.64-12.64Z"
+                  style="fill: #fff; stroke-width: 0px"
+                />
+              </svg>
+              <div>1</div>
+            </div>
+            <div class="layout__scales-item-number">
+              {{ vodka }}
+            </div>
+            <div class="layout__scales-item-max" v-if="config">
+              ({{ config.things.vodka.max }})
+            </div>
+          </div>
+
+          <div class="layout__scales-item layout__scales-item--stew">
+            <div class="layout__scales-item-icon">
+              <svg
+                id="_Слой_1"
+                data-name="Слой 1"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 269 487.5"
+              >
+                <path
+                  d="m0,74v2.5c0-.84.05-1.67.14-2.5h-.14Z"
+                  style="fill: #fff; stroke-width: 0px"
+                />
+                <path
+                  d="m268.86,74c.09.83.14,1.66.14,2.5v-2.5h-.14Z"
+                  style="fill: #fff; stroke-width: 0px"
+                />
+                <path
+                  d="m268.86,54C265.75,23.96,206.79,0,134.5,0S3.25,23.96.14,54c-.09.83-.14,1.66-.14,2.5,0,31.2,60.22,56.5,134.5,56.5s134.5-25.3,134.5-56.5c0-.84-.05-1.67-.14-2.5Z"
+                  style="fill: #fff; stroke-width: 0px"
+                />
+                <path
+                  d="m134.5,133C60.22,133,0,107.7,0,76.5v354.5c0,31.2,60.22,56.5,134.5,56.5s134.5-25.3,134.5-56.5V76.5c0,31.2-60.22,56.5-134.5,56.5Z"
+                  style="fill: #fff; stroke-width: 0px"
+                />
+              </svg>
+              <div>2</div>
+            </div>
+            <div class="layout__scales-item-number">
+              {{ stew }}
+            </div>
+            <div class="layout__scales-item-max" v-if="config">
+              ({{ config.things.stew.max }})
+            </div>
+          </div>
+
           <Scale face="health" :progress="!isGameOver && health ? health : 0" />
+
           <Scale
             face="endurance"
             :progress="endurance"
             :lock="isTired && !isGameOver"
             :not="isTired && !isGameOver"
           />
+          <Scale face="food" :progress="food" :not="food < 25 && !isGameOver" />
+          <Scale
+            face="water"
+            :progress="water"
+            :not="water < 25 && !isGameOver"
+          />
+          <Scale
+            face="toxic"
+            :progress="toxic"
+            :not="toxic > 75 && !isGameOver"
+          />
         </div>
 
-        <div v-if="isPick" class="layout__overlay layout__overlay--light effect" />
-        <div class="layout__overlay layout__overlay--dark" :key="keyHealth" :style="` opacity: ${(health >= 0 ? (100 - health) / 200 : 0.5)}`" />
-        <div class="layout__overlay layout__overlay--hit" :key="keyHealth" :style="` opacity: ${(health >= 0 ? (100 - health) / 200 : 0.5)}`" />
+        <div v-if="config" class="layout__ammo">
+          <div
+            class="layout__ammo-scale"
+            :class="{
+              'layout__ammo-scale--disabled': isMove || !isNotJump,
+            }"
+          >
+            <Scale face="weapon" :progress="(shotTime * 100 / 1.5) > 100 ? 100 : (shotTime * 100 / 1.5)" />
+          </div>
+          {{ grenades }}<span>({{ config.things[Things.grenades].max }})</span>
+        </div>
+
+        <div
+          v-if="isPick"
+          class="layout__overlay layout__overlay--light effect"
+        />
+        <div
+          class="layout__overlay layout__overlay--dark"
+          :key="keyHealth"
+          :style="` opacity: ${health >= 0 ? (100 - health) / 200 : 0.5}`"
+        />
+        <div
+          class="layout__overlay layout__overlay--hit"
+          :key="keyHealth"
+          :style="` opacity: ${health >= 0 ? (100 - health) / 200 : 0.5}`"
+        />
         <div
           class="layout__overlay"
           :class="[
@@ -89,10 +198,7 @@
         />
 
         <transition-group name="fade2" tag="ul" class="layout__messages">
-          <li
-            class="layout__message"
-            v-if="message"
-          >
+          <li class="layout__message" v-if="message">
             {{ $t(`${message}`) }}
             <span v-if="content">{{ $t(`${content}`) }}</span>
           </li>
@@ -106,12 +212,19 @@
           </li>
         </transition-group>
 
-        <div class="layout__name">{{ name }}/{{ exp }}</div>
-        <div class="layout__location">
-          {{ locationData && locationData.name[language] }}
+        <div class="layout__name">
+          {{ name }}
+          <span :style="`white-space: nowrap`">/ {{ exp }} ({{ level }})</span>
+        </div>
+        <div v-if="locationData" class="layout__location">
+          {{ locationData.name[language] }} ({{ locationData.index }})
         </div>
 
         <Map class="layout__map" v-if="isMap && !isReload" />
+
+        <Help class="layout__help" v-if="isHelp && !isReload" />
+
+        <Chat class="layout__chat" v-if="isChat && !isReload" />
 
         <div class="layout__effect" />
 
@@ -123,6 +236,9 @@
           >
             <div class="layout__header">
               {{ !isGameOver ? $t('name') : $t('gameover') }}
+            </div>
+            <div v-if="!isGameOver" class="layout__version">
+              v{{ config.version }}
             </div>
 
             <LangSwitch v-if="!isGameOver" />
@@ -147,17 +263,17 @@
               </button>
             </div>
 
-            <div v-if="!isGameOver" class="layout__help">
-              <div class="layout__keys">{{ $t('control1') }}</div>
-              <div class="layout__keys">{{ $t('control2') }}</div>
-              <div class="layout__keys">{{ $t('control3') }}</div>
-              <div class="layout__keys">{{ $t('control4') }}</div>
-              <div class="layout__keys">{{ $t('control5') }}</div>
-              <div class="layout__keys">{{ $t('control6') }}</div>
+            <div v-if="!isGameOver" class="layout__keys-wrapper">
               <div class="layout__keys">{{ $t('control8') }}</div>
               <div class="layout__keys">{{ $t('control9') }}</div>
               <div class="layout__keys">{{ $t('control10') }}</div>
-              <div class="layout__keys">{{ $t('control11') }}</div>
+              <div class="layout__keys">{{ $t('control12') }}</div>
+            </div>
+            <div class="layout__copy">
+              {{ $t('link') }}:
+              <a href="https://t.me/ruinsworld" target="__blank"
+                >t.me/ruinsworld</a
+              >
             </div>
             <div class="layout__copy">{{ $t('copyright') }}</div>
           </div>
@@ -181,6 +297,7 @@ import emitter from '@/utils/emitter';
 
 // Constants
 import { ScreenHelper } from '@/utils/constants';
+import { Races, Things } from '@/utils/constants';
 
 // Types
 import { EmitterEvents } from '@/models/api';
@@ -193,6 +310,8 @@ import Scene from '@/components/Scene/Scene.vue';
 import LangSwitch from '@/components/Layout/LangSwitch.vue';
 import Scale from '@/components/Layout/Scale.vue';
 import Map from '@/components/Layout/Map.vue';
+import Help from '@/components/Layout/Help.vue';
+import Chat from '@/components/Layout/Chat.vue';
 
 // Utils
 import { restartDispatchHelper } from '@/utils/utils';
@@ -208,6 +327,8 @@ export default defineComponent({
     Gate,
     Scale,
     Map,
+    Help,
+    Chat,
   },
 
   setup() {
@@ -223,7 +344,8 @@ export default defineComponent({
     let play: () => void;
     let enter: () => void;
     let reenter: () => void;
-    let beep: () => void;
+    let beep: (is?: boolean) => void;
+    let filter: (value: any) => void;
     let setRace: (value: string) => void;
     const isGameLoaded = computed(
       () => store.getters['preloader/isGameLoaded'],
@@ -240,18 +362,37 @@ export default defineComponent({
     const isTired = computed(() => store.getters['persist/isTired']);
     const isOptical = computed(() => store.getters['not/isOptical']);
     const isMap = computed(() => store.getters['not/isMap']);
+    const isHelp = computed(() => store.getters['not/isHelp']);
+    const isChat = computed(() => store.getters['not/isChat']);
     const messages = computed(() => store.getters['not/messages']);
     const message = computed(() => store.getters['not/message']);
     const content = computed(() => store.getters['not/content']);
     const language = computed(() => store.getters['persist/language']);
-    const select = computed(() => store.getters['persist/race']);
+    const race = computed(() => store.getters['persist/race']);
     const last = computed(() => store.getters['persist/last']);
     const isPick = computed(() => store.getters['not/isPick']);
-    const exp = computed(() => store.getters['api/exp']);
+    const exp = computed(() => Math.round(store.getters['api/exp']));
+    const food = computed(() => Math.round(store.getters['persist/food']));
+    const water = computed(() => Math.round(store.getters['persist/water']));
+    const toxic = computed(() => Math.round(store.getters['persist/toxic']));
+    const level = computed(() =>
+      Math.floor(
+        store.getters['api/exp'] / store.getters['persist/config']?.exp,
+      ),
+    );
+    const grenades = computed(() => store.getters['persist/grenades']);
+    const vodka = computed(() => store.getters['persist/vodka']);
+    const stew = computed(() => store.getters['persist/stew']);
+    const config = computed(() => store.getters['persist/config']);
+    const isMove = computed(() => store.getters['not/isMove']);
+    const isNotJump = computed(() => store.getters['not/isNotJump']);
+    const shotTime = computed(() => store.getters['not/shotTime']);
 
     onMounted(() => {
       onWindowResize();
       window.addEventListener('resize', onWindowResize, false);
+
+      nickname.value = name.value;
 
       setTimeout(() => {
         isFirts.value = true;
@@ -264,20 +405,22 @@ export default defineComponent({
 
     reenter = () => {
       beep();
-      store.dispatch('persist/setPersistState', {
-        field: 'last',
-        value: locationData.value.id,
-      }).then(() => {
-        emitter.emit(EmitterEvents.reenter);
-        restartDispatchHelper(store);
-      });
+      store
+        .dispatch('persist/setPersistState', {
+          field: 'last',
+          value: locationData.value.id,
+        })
+        .then(() => {
+          emitter.emit(EmitterEvents.reenter);
+          restartDispatchHelper(store);
+        });
     };
 
     enter = () => {
       beep();
       emitter.emit(EmitterEvents.enter, {
         name: nickname.value,
-        race: select.value,
+        race: race.value,
         location: last.value,
       });
       store.dispatch('persist/setPersistState', {
@@ -301,25 +444,24 @@ export default defineComponent({
       beep();
     };
 
-    beep = () => {
+    filter = (value) => {
+      if (value.data && !value.data.match(/[^0-9a-z\s]/gi)) beep();
+      else beep(true);
+      nickname.value = nickname.value.replace(/[^0-9a-z\s]/gi, '');
+    };
+
+    beep = (is = false) => {
       const ctx = new AudioContext();
       const oscillator = ctx.createOscillator();
       const gainNode = new GainNode(ctx, {
         gain: 0.1,
       });
-      oscillator.frequency.value = Math.random() * 2200 + 440;
+      if (!is) oscillator.frequency.value = Math.random() * 2200 + 440;
+      else oscillator.frequency.value = 330;
       oscillator.connect(gainNode).connect(ctx.destination);
       oscillator.start();
-      oscillator.stop(0.15);
+      oscillator.stop(is ? 0.3 : 0.15);
     };
-
-    // Следим за вводом
-    watch(
-      () => nickname.value,
-      (value) => {
-        beep();
-      },
-    );
 
     // Следим за языком
     watch(
@@ -340,6 +482,22 @@ export default defineComponent({
     // Следим за паузой
     watch(
       () => isPause.value,
+      (value) => {
+        if (isFirts.value) beep();
+      },
+    );
+
+    // Следим за чатом
+    watch(
+      () => isChat.value,
+      (value) => {
+        if (isFirts.value) beep();
+      },
+    );
+
+    // Следим за подсказкой
+    watch(
+      () => isHelp.value,
       (value) => {
         if (isFirts.value) beep();
       },
@@ -375,14 +533,30 @@ export default defineComponent({
       reenter,
       setRace,
       nickname,
-      select,
+      race,
       isOnHit,
       locationData,
       isMap,
+      isHelp,
+      isChat,
       language,
       keyHealth,
       isPick,
       exp,
+      level,
+      grenades,
+      Races,
+      Things,
+      filter,
+      vodka,
+      config,
+      food,
+      water,
+      toxic,
+      stew,
+      isMove,
+      isNotJump,
+      shotTime,
     };
   },
 });
@@ -411,7 +585,7 @@ $noactive
   @extend $viewport
   text-align center
 
-  &__select
+  &__race
     width 40vh
     height 25vh
     display flex
@@ -456,9 +630,16 @@ $noactive
 
   &__header
     color $colors.sea
-    margin-top 5vh
-    margin-bottom 2vh
+    margin-top 15vh
     $text("olga")
+
+    &--noenter
+      margin-top 5vh
+
+  &__version
+    color $colors.sea
+    margin-bottom 2vh
+    $text("nina")
 
   &__enter
     @extend $viewport
@@ -475,22 +656,22 @@ $noactive
 
   &__title
     color $colors.sea
-    margin-top 4vh
-    margin-bottom 20px
+    margin-top 2vh
+    margin-bottom 2vh
     $text("elena")
 
   &__nick
     color $colors.sea
     margin-bottom 2vh
-    $text("nina")
+    $text("natasha")
 
   &__input
-    width 15vw
-    padding-left 10px
-    padding-right 10px
+    width 23vw
+    padding-left 10 * $pixel
+    padding-right 10 * $pixel
     margin-bottom 1vh
     color $colors.sea
-    border 4px solid $colors.sea
+    border 3 * $pixel solid $colors.sea
     background transparent
     $text("elena")
 
@@ -503,12 +684,12 @@ $noactive
 
     &--dark
       background $colors.sea
-    
+
     &--hit
       background $colors.hit
 
     &--light
-      background $colors.stone
+      background lighten($colors.primary, 33%)
 
   &__effect
     @extend $viewport
@@ -539,17 +720,28 @@ $noactive
       opacity 0
       background url("../../assets/optical.png") no-repeat center top
 
-  &__map
+  &__map,
+  &__help,
+  &__chat
     @extend $viewport
     z-index 10000
+
+  &__chat
+    position fixed
+    overflow hidden
+    top 30%
+    left 0
+    right 0
+    bottom 0
+    width 100vw
+    height 70vh
 
   &__messages
     @extend $viewport
     text-align left
     list-style none
-    padding 10px 25vw 0 10px
+    padding 10 * $pixel 40vw 0 10px
     pointer-events none
-    // color $colors.sea
     color $colors.stone
 
   &__message
@@ -563,12 +755,14 @@ $noactive
     color $colors.stone
 
   &__location
-    top 10px
-    $text("maria")
+    top 10 * $pixel
+    $text("nina")
 
   &__name
-    top 40px
-    $text("alina")
+    text-align right
+    max-width 37vw
+    top 30 * $pixel
+    $text("maria")
 
   &__blocker
     @extend $viewport
@@ -593,26 +787,103 @@ $noactive
       opacity 0.5
 
     &--enter
-      margin-bottom 0.5vh
+      margin-bottom 5vh
 
     &--dead
       @extend $button--variant
 
-  &__help
-    margin-top $gutter
+  &__keys-wrapper
+    margin-bottom $gutter * 2
 
   &__keys,
   &__copy
-    margin-bottom 10px
+    margin-bottom 1vh
     color $colors.sea
     $text("nina")
 
+  &__link
+    margin-top 3vh
+    margin-bottom 1vh
+    color $colors.sea
+    $text("natasha")
+
   &__copy
     margin-top $gutter
+    $text("natasha")
+
+  &__scales
+    border 2 * $pixel solid $colors.stone
 
   &__scales
     position absolute
-    bottom 10px
-    left 10px
+    bottom 1vh
+    left 0.5vh
     width 15vw
+
+    &-item
+      display flex
+      position absolute
+      bottom 0
+      width 12vh
+      height 6vh
+
+      &--vodka
+        left 16vw
+
+      &--stew
+        left 23.5vw
+
+      &-icon
+        position relative
+        margin-right 1vh
+        min-width 4vh
+        width 4vh
+        height 6vh
+
+        > svg,
+        > div
+          position absolute
+          width 100%
+          height 100%
+          left 0
+          right 0
+          top 0
+          bottom 0
+
+        > div
+          color $colors.sea
+          transform translateY(2.5vh)
+          $text("maria")
+
+      &-number
+        transform translateY(2.5vh)
+        color #fff
+        $text("elena")
+
+      &-max
+        transform translateY(2.7vh)
+        color #fff
+        $text("nina")
+        $opacity("psy")
+
+  &__ammo
+    position absolute
+    bottom 3vh
+    right 0.5vh
+    color $colors.stone
+    $text("olga")
+
+    > span
+      $opacity("funky")
+      $text("nina")
+
+  &__ammo-scale
+    border 2 * $pixel solid $colors.stone
+    position absolute
+    bottom -2.5vh
+    right 0.5vh
+    width 11vw
+
+    &--disabled
+      opacity 0.5
 </style>

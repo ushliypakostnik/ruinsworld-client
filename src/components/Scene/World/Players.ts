@@ -1,7 +1,7 @@
 // Types
 import type { Mesh } from 'three';
 import type { ISelf } from '@/models/modules';
-import { IShot, IUnitInfo } from '@/models/api';
+import { IShot, IUnitInfo, IZone } from '@/models/api';
 
 // Constants
 import { Names } from '@/utils/constants';
@@ -41,7 +41,10 @@ export default class Players {
     return this._enemies.getList();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public check(self: ISelf, zones: IZone[]) {
+    this._hero.check(self, zones);
+  }
+
   public animate(self: ISelf, world: Mesh[]): void {
     // Animated modules
     this._hero.animate(self, world);

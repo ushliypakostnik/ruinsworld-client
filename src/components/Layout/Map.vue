@@ -4,45 +4,123 @@
       <Loader v-if="!map" />
 
       <div v-else class="map__wrapper-inner">
-        <div
-          class="map__world"
-        >
+        <div class="map__world">
+          <div class="map__alpha">
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 0">A</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 1">B</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 2">C</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 3">D</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 4">E</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 5">F</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 6">G</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 7">H</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 8">I</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 9">J</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 10">K</div>
+          </div>
+          <div class="map__numbers">
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 0">1</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 1">2</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 2">3</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 3">4</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 4">5</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 5">6</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 6">7</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 7">8</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 8">9</div>
+            <div v-if="Math.floor(Math.sqrt(map.locations.length)) > 10">
+              11
+            </div>
+          </div>
           <div
             v-for="item in map.locations"
             :key="`item--${item.id}`"
             class="map__location"
             :class="{
               'map__location--this': item.id === location,
-              'map__location--town': Math.abs(item.x) < 2 && Math.abs(item.y) < 2,
-              'map__location--center': item.x === 0 && item.y === 0
+              'map__location--town':
+                Math.abs(item.x) < 2 && Math.abs(item.y) < 2,
             }"
-            :style="`width: 2.1vh; height: 2.1vh; left: calc(${item.x + Math.floor(Math.sqrt(map.locations.length) / 2)
-              } * 2.1vh); top: calc(${item.y + Math.floor(Math.sqrt(map.locations.length) / 2)
-              } * 2.1vh);`"
+            :style="`width: 4.2vh; height: 4.2vh; left: calc(${
+              item.x + Math.floor(Math.sqrt(map.locations.length) / 2)
+            } * 4.2vh); top: calc(${
+              item.y + Math.floor(Math.sqrt(map.locations.length) / 2)
+            } * 4.2vh);`"
           >
             <div
               class="map__location-inner"
               :class="{
-                'map__location-inner--red': item.status === 'human',
-                'map__location-inner--blue': item.status === 'reptiloid',
-              }" />
+                'map__location-inner--red': item.status === Races.human,
+                'map__location-inner--blue': item.status === Races.reptiloid,
+              }"
+            />
           </div>
         </div>
 
         <div>
           <div class="map__scene">
+            <div class="map__scene-center" />
             <div
               v-for="unit in map.units"
-              :key="`npc--${unit.id}`"
-              class="point"
+              :key="`unit--${unit.id}`"
               :class="{
                 'map__point--dead': unit.isDead,
-                'map__point--human': unit.race === 'human',
-                'map__point--reptiloid': unit.race === 'reptiloid',
-                'map__point--npc': unit.race !== 'human' && unit.race !== 'reptiloid',
+                'map__point--me': id === unit.id,
+                'map__point--human': unit.race === Races.human && id !== unit.id,
+                'map__point--reptiloid': unit.race === Races.reptiloid && id !== unit.id,
+                'map__point--enemy':
+                  unit.race !== Races.human &&
+                  unit.race !== Races.reptiloid &&
+                  ((unit.race !== Races.cyborg && race === Races.human) ||
+                    (unit.race !== Races.soldier && race === Races.reptiloid)),
+                'map__point--friend-human':
+                  unit.race !== Races.human &&
+                  unit.race !== Races.reptiloid &&
+                  (unit.race === Races.cyborg && race === Races.human),
+                'map__point--friend-reptiloid':
+                  unit.race !== Races.human &&
+                  unit.race !== Races.reptiloid &&
+                  (unit.race === Races.soldier && race === Races.reptiloid),
               }"
               :style="`left: calc(${unit.x} * 46vh + 23vh); top: calc(${unit.y} * 46vh + 23vh);`"
-            ></div>
+            />
+            <div
+              v-for="zone in locationData.zones"
+              :key="`zone--${zone.id}`"
+              class="map__zone"
+              :style="`left: calc(${zone.x / DESIGN.SIZE} * 46vh + 23vh);
+                top: calc(${zone.z / DESIGN.SIZE} * 46vh + 23vh);
+                transform: translateX(calc(-1 * ${zone.radius / (DESIGN.SIZE * 2)} * 50vh)) translateY(calc(-1 * ${zone.radius / (DESIGN.SIZE * 2)} * 50vh));
+                width: calc(${zone.radius * 2 / DESIGN.SIZE} * 46vh);
+                height: calc(${zone.radius * 2 / DESIGN.SIZE} * 46vh);`"
+            />
+            <div
+              v-for="build in locationData.builds"
+              :key="`build--${build.id}`"
+              class="map__build"
+              :style="`left: calc(${build.x / DESIGN.SIZE} * 46vh + 23vh);
+                top: calc(${build.z / DESIGN.SIZE} * 46vh + 23vh);
+                width: calc(${build.scale * 2.15 / DESIGN.SIZE} * 46vh);
+                height: calc(${build.scale * 2.15 / DESIGN.SIZE} * 46vh);
+                transform: rotate(${build.rotateY}deg)`"
+            />
+            <div
+              v-for="stone in locationData.stones3"
+              :key="`zone--${stone.id}`"
+              class="map__stone"
+              :style="`left: calc(${stone.x / DESIGN.SIZE} * 46vh + 23vh);
+                top: calc(${stone.z / DESIGN.SIZE} * 46vh + 23vh);
+                width: calc(${stone.scaleX / DESIGN.SIZE} * 46vh);
+                height: calc(${stone.scaleZ / DESIGN.SIZE} * 46vh);
+                transform: rotate(${stone.rotateY}deg)`"
+            />
+            <div
+              v-for="unit in locationData.wells"
+              :key="`well--${unit.id}`"
+              class="map__well"
+              :style="`left: calc(${unit.x / DESIGN.SIZE} * 46vh + 23vh);
+                top: calc(${unit.z / DESIGN.SIZE} * 46vh + 23vh);`"
+            />
           </div>
         </div>
       </div>
@@ -55,6 +133,7 @@ import { computed, defineComponent, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import { key } from '@/store';
 import { useI18n } from 'vue-i18n';
+import { DESIGN, Races } from '@/utils/constants';
 
 // Components
 import Loader from '@/components/Layout/Loader.vue';
@@ -73,8 +152,11 @@ export default defineComponent({
     let timeout: ReturnType<typeof setInterval>;
 
     const map = computed(() => store.getters['api/map']);
+    const id = computed(() => store.getters['persist/id']);
     const location = computed(() => store.getters['api/location']);
+    const locationData = computed(() => store.getters['api/locationData']);
     const hero = computed(() => store.getters['persist/id']);
+    const race = computed(() => store.getters['persist/race']);
 
     onMounted(() => {
       store.dispatch('api/getMap', location.value);
@@ -94,6 +176,11 @@ export default defineComponent({
       map,
       hero,
       location,
+      race,
+      Races,
+      locationData,
+      DESIGN,
+      id,
     };
   },
 });
@@ -104,6 +191,7 @@ $name = '.map'
 
 $size = 1vh
 $sizeLarge = 1.5vh
+$sizeSuper = 2.5vh
 
 $point($s)
   position absolute
@@ -114,6 +202,28 @@ $point($s)
 
 {$name}
   background rgba(0, 0, 0, 0.5)
+
+  &__alpha
+    left -3vh
+    top 1vh
+
+    > div
+      margin-bottom 1.9vh
+
+  &__numbers
+    display flex
+    top -3vh
+    left 1vh
+
+    > div
+      margin-right 2.4vh
+
+  &__alpha,
+  &__numbers
+    position absolute
+    color #fff
+    $text("nina")
+    $opacity("rock")
 
   &__wrapper
     width 100%
@@ -127,20 +237,24 @@ $point($s)
 
   &__world
     position relative
-    margin-right 10vh
 
   &__location
     position absolute
     border 1px solid $colors.stone
 
   &__location--town
-    background: rgba($colors.stone, 0.25)
-
-  &__location--center
-    background rgba($colors.stone, 0.5)
+    background rgba($colors.stone, 0.25)
 
   &__location--this
-    background rgba($colors.stone, 0.75)
+    position absolute
+
+    &::after
+      position absolute
+      left -0.5vh
+      top -0.05vh
+      content ""
+      background $colors.stone
+      $point($sizeSuper)
 
   &__location-inner
     position absolute
@@ -157,6 +271,20 @@ $point($s)
   &__location-inner--blue
     background rgba($colors.wood, 0.5)
 
+  &__scene-center
+    position absolute
+    left 50%
+    top 50%
+    transform translateX(-2.75vh) translateY(-2.75vh)
+    width 5vh
+    height 5vh
+    background rgba($colors.stone, 0.25)
+
+  &__build,
+  &__stone
+    position absolute
+    background rgba($colors.stone, 0.25)
+
   &__scene
     position relative
     width 50vh
@@ -164,22 +292,43 @@ $point($s)
     overflow hidden
     border 2px solid $colors.stone
 
+  &__well
+    position absolute
+    background $colors.bug
+    $point($sizeLarge)
+
+  &__zone
+    position absolute
+    background rgba($colors.dog, 0.33)
+    border-radius 50%
+
+  &__point--me
+    background $colors.stone
+    $point($sizeSuper)
+
   &__point--human
     background $colors.bird
+    border 0.3vh solid $colors.stone
     $point($sizeLarge)
 
   &__point--reptiloid
     background $colors.wood
+    border 0.3vh solid $colors.stone
     $point($sizeLarge)
 
-  &__point--npc
+  &__point--enemy
     background $colors.ghost
     $point($size)
-  
+
+  &__point--friend-human
+    background $colors.bird
+    $point($size)
+
+  &__point--friend-reptiloid
+    background $colors.wood
+    $point($size)
+
   &__point--dead
     background $colors.stone
     $opacity("rock")
-
-{$name}__user--hero
-  background $colors.dog
 </style>

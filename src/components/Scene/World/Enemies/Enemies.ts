@@ -19,7 +19,15 @@ import type { IUnit, IUnitThree, IUnitInfo } from '@/models/api';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // Constants
-import { Animations, Audios, Names, Textures, Races, DESIGN, Lifecycle } from '@/utils/constants';
+import {
+  Animations,
+  Audios,
+  Names,
+  Textures,
+  Races,
+  DESIGN,
+  Lifecycle,
+} from '@/utils/constants';
 import { EmitterEvents } from '@/models/api';
 
 // Modules
@@ -29,7 +37,8 @@ export default class Enemies {
   public name = Names.enemies;
 
   private _isTest!: boolean;
-  private _isTestLocal = Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
+  private _isTestLocal =
+    Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
 
   private _gltf!: GLTF;
   private _modelHuman!: Group;
@@ -60,13 +69,16 @@ export default class Enemies {
   private _weaponFire!: Object3D;
   private _animation!: string;
   private _action!: AnimationAction;
-
+  private _noEvent!: string[];
+  private _v1!: Vector3;
+  private _v2!: Vector3;
   private _isFirstAnimate = false;
   private _time = 0;
   private _timeRegeneration = 0;
   private _list: IUnitThree[];
   private _item!: IUnitThree;
   private _listNew: IUnit[];
+  private _listNewMin: IUnit[];
   private _listNow: IUnit[];
   private _listMerge: IUnit[];
   private _idsList: string[];
@@ -82,10 +94,12 @@ export default class Enemies {
     this._list = [];
     this._listNow = [];
     this._listNew = [];
+    this._listNewMin = [];
     this._listMerge = [];
     this._idsList = [];
     this._idsListNew = [];
     this._isOnHit2 = false;
+    this._noEvent = [];
 
     this._isTest =
       process.env.NODE_ENV === 'development' ? this._isTestLocal : false;
@@ -108,7 +122,7 @@ export default class Enemies {
       (model: GLTF) => {
         this._gltf = model;
 
-        console.log('human animation: ', this._gltf.animations);
+        // console.log('human animation: ', this._gltf.animations);
 
         this._modelHuman = this._gltf.scene;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -119,7 +133,10 @@ export default class Enemies {
             child.castShadow = true;
           }
         });
-        self.helper.loaderDispatchHelper(self.store, Races.human as unknown as Names);
+        self.helper.loaderDispatchHelper(
+          self.store,
+          Races.human as unknown as Names,
+        );
       },
     );
 
@@ -128,7 +145,7 @@ export default class Enemies {
       (model: GLTF) => {
         this._gltf = model;
 
-        console.log('reptiloid animation: ', this._gltf.animations);
+        // console.log('reptiloid animation: ', this._gltf.animations);
 
         this._modelReptil = this._gltf.scene;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -139,7 +156,10 @@ export default class Enemies {
             child.castShadow = true;
           }
         });
-        self.helper.loaderDispatchHelper(self.store, Races.reptiloid as unknown as Names);
+        self.helper.loaderDispatchHelper(
+          self.store,
+          Races.reptiloid as unknown as Names,
+        );
       },
     );
 
@@ -152,7 +172,7 @@ export default class Enemies {
       pseudoGeometry,
       self.assets.getMaterial(Textures.pseudo),
     );
-    this._pseudo.visible = false;
+    this._pseudo.visible = process.env.VUE_APP_TEST_MODE === '1';
 
     this._sound = new THREE.Mesh(
       new THREE.BoxBufferGeometry(1, 1, 1),
@@ -173,7 +193,7 @@ export default class Enemies {
     });
   }
 
-  // Взять информацию о противниках
+  // Взять информацию о живых противниках
   public getList(): IUnitInfo[] {
     return this._list
       .filter((player) => player.animation !== 'dead')
@@ -193,7 +213,8 @@ export default class Enemies {
     // console.log('Enemies _addPlayer(): ', player);
     this._isHide = player.animation.includes('hide');
 
-    if (player.race === Races.reptiloid) this._modelClone = clone(this._modelReptil);
+    if (player.race === Races.reptiloid)
+      this._modelClone = clone(this._modelReptil);
     else this._modelClone = clone(this._modelHuman);
 
     this._pseudoClone = this._pseudo.clone();
@@ -207,7 +228,12 @@ export default class Enemies {
     this._name = new Text();
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    this._name.text = player.name;
+    this._name.text =
+      player.name +
+      ' / ' +
+      Math.floor(
+        Number(player.exp) / (self.store.getters['persist/config']?.exp | 200),
+      );
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     this._name.fontSize = 0.25;
@@ -344,6 +370,14 @@ export default class Enemies {
     });
   }
 
+  // Для простого троттлинга событий
+  private _setNoEvent(event: string, delay?: number) {
+    this._noEvent.push(event);
+    setTimeout(() => {
+      this._noEvent = this._noEvent.filter((e) => e !== event);
+    }, delay || 500);
+  }
+
   public animate(self: ISelf): void {
     if (
       self.store.getters['api/game'] &&
@@ -353,23 +387,67 @@ export default class Enemies {
       this._time += self.events.delta;
       this._timeRegeneration += self.events.delta;
 
-      // Востановление Здоровье игрока - героя - странно, но именно здесь
-      if (this._timeRegeneration > 0.25) {
+      // Востановление здоровья игрока - героя - странно, но именно здесь
+      if (this._timeRegeneration > 0.25 && !self.store.getters['persist/isGameOver']) {
         this._id = self.store.getters['persist/id'];
         this._user = self.store.getters['api/game'].users.find(
           (user: IUnit) => user.id === this._id,
         );
         if (this._user) {
-          self.store.dispatch('api/setApiState', {
-            field: 'health',
-            value: this._user.health,
-          });
-
-          if (this._user.health <= 0) {
-            self.store.dispatch('persist/setPersistState', {
-              field: 'isGameOver',
-              value: true,
+          if (this._user.health < 100) {
+            if (!this._noEvent.includes('health1')) {
+              this._setNoEvent('health1', 500);
+              self.store.dispatch('api/setApiState', {
+                field: 'health',
+                value: this._user.health,
+              });
+            }
+          } else if (!this._noEvent.includes('health2')) {
+            this._setNoEvent('health2', 500);
+            self.store.dispatch('api/setApiState', {
+              field: 'health',
+              value: this._user.health,
             });
+          }
+
+          // Усиление голода и жажды
+          self.store
+            .dispatch('persist/setPersistState', {
+              field: 'food',
+              value:
+                self.store.getters['persist/food'] -
+                Number(process.env.VUE_APP_FOOD_SPEED),
+            })
+            .then(() => {
+              if (self.store.getters['persist/food'] < 25) {
+                if (!this._noEvent.includes('food')) {
+                  this._setNoEvent('food', 5000);
+                  self.events.messagesByIdDispatchHelper(self, 'foodlow');
+                }
+              }
+            });
+          self.store
+            .dispatch('persist/setPersistState', {
+              field: 'water',
+              value:
+                self.store.getters['persist/water'] -
+                Number(process.env.VUE_APP_WATER_SPEED),
+            })
+            .then(() => {
+              if (self.store.getters['persist/water'] < 25) {
+                if (!this._noEvent.includes('water')) {
+                  this._setNoEvent('water', 5000);
+                  self.events.messagesByIdDispatchHelper(self, 'waterlow');
+                }
+              }
+            });
+
+          // Высокое отравление
+          if (self.store.getters['persist/toxic'] > 75) {
+            if (!this._noEvent.includes('toxic')) {
+              this._setNoEvent('toxic', 5000);
+              self.events.messagesByIdDispatchHelper(self, 'toxichight');
+            }
           }
 
           if (this._user.isOnHit2 && !this._isOnHit2) {
@@ -403,12 +481,12 @@ export default class Enemies {
         if (!this._isFirstAnimate) {
           this._isFirstAnimate = true;
           // console.log('Самый первый раз!!!');
-          this._listNew.forEach((user) => {
+          this._listNewMin.forEach((user) => {
             this._addPlayer(self, user);
           });
         } else {
           // Всегда потом
-          this._listMerge = [...this._listNew];
+          this._listMerge = [...this._listNewMin];
           this._idsList.forEach((id) => {
             if (!this._idsListNew.includes(id)) {
               this._user = this._listNow.find(
@@ -432,7 +510,7 @@ export default class Enemies {
                 // console.log('УДАЛЯЕМ: ', user.id);
                 this._removePlayer(self, this._item);
               }
-              // Нет в старом списке - на добавлекние
+              // Нет в старом списке - на добавление
             } else if (
               !this._idsList.includes(user.id) &&
               this._idsListNew.includes(user.id)
@@ -455,7 +533,7 @@ export default class Enemies {
             }
           });
         }
-        this._listNow = [...this._listNew];
+        this._listNow = [...this._listNewMin];
         this._idsList = [...this._idsListNew];
         /*
         console.log('Пересборка и оптимизация ФИНИШ: ', 
@@ -469,9 +547,9 @@ export default class Enemies {
             JSON.stringify(this._idsList),
           )); */
       } else {
-        this._list.forEach((npc) => {
+        this._listNow.forEach((user) => {
           this._item = this._list.find(
-            (unit: IUnitThree) => unit.id === npc.id,
+            (unit: IUnitThree) => unit.id === user.id,
           ) as IUnitThree;
           if (this._item) {
             this._animatePlayer(self, this._item);
@@ -486,26 +564,36 @@ export default class Enemies {
     if (this._isTest)
       this._listNew = JSON.parse(
         JSON.stringify(
-          self.store.getters['api/game'].users
-            .filter(
-              (user: IUnit) => user.lifecycle !== Lifecycle.born,
-            )
+          self.store.getters['api/game'].users.filter(
+            (user: IUnit) => user.lifecycle !== Lifecycle.born,
+          ),
         ),
       );
     else
       this._listNew = JSON.parse(
         JSON.stringify(
           self.store.getters['api/game'].users
-            .filter(
-              (user: IUnit) => user.lifecycle !== Lifecycle.born,
-            )
+            .filter((user: IUnit) => user.lifecycle !== Lifecycle.born)
             .filter(
               (user: IUnit) => user.id !== self.store.getters['persist/id'],
             ),
         ),
       );
-    this._idsListNew = this._listNew.map((npc: IUnit) => {
-      return npc.id;
+
+    this._listNewMin = this._listNew
+      .sort((a: IUnit, b: IUnit) => {
+        this._v1 = new THREE.Vector3(a.positionX, a.positionY, a.positionZ);
+        this._v2 = new THREE.Vector3(b.positionX, b.positionY, b.positionZ);
+
+        return (
+          this._v1.distanceTo(self.camera.position) -
+          this._v2.distanceTo(self.camera.position)
+        );
+      })
+      .slice(0, Number(process.env.VUE_APP_ITEMS));
+
+    this._idsListNew = this._listNewMin.map((user: IUnit) => {
+      return user.id;
     });
   }
 
@@ -744,7 +832,14 @@ export default class Enemies {
         this._pseudoClone.position.z,
       );
 
-      this._modelClone.quaternion.copy(new THREE.Quaternion(this._user.directionX, this._user.directionY, this._user.directionZ, this._user.directionW));
+      this._modelClone.quaternion.copy(
+        new THREE.Quaternion(
+          this._user.directionX,
+          this._user.directionY,
+          this._user.directionZ,
+          this._user.directionW,
+        ),
+      );
       this._modelClone.rotateY(-Math.PI / 2 - 0.3);
       this._pseudoClone.quaternion.copy(this._modelClone.quaternion);
 
@@ -782,6 +877,10 @@ export default class Enemies {
       );
 
       this._name = user.text;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this._name.text =
+        this._user.name + ' / ' + Math.floor(Number(this._user.exp) / 100);
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this._name.setRotationFromMatrix(self.camera.matrix);

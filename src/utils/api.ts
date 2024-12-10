@@ -15,6 +15,10 @@ const responseBody = (response: AxiosResponse) => response.data;
 
 export const APIService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getConfig: (): Promise<any> =>
+    instance.get('/config').then(responseBody),
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getLocation: (id: string): Promise<any> =>
     instance.get(`/locations/${id}`).then(responseBody),
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="scale" :class="[lock && 'scale--lock', not && 'effect']">
+  <div class="scale" :class="[lock && 'scale--lock', not && 'effect-scale']">
     <div
       v-if="progress > 0"
       class="scale__progress"
@@ -59,5 +59,21 @@ export default defineComponent({
 
     &--endurance
       background $colors.ghost
+      box-shadow 1px 2px 3px $colors.sea
+
+    &--food
+      background $colors.dog
+      box-shadow 1px 2px 3px $colors.sea
+
+    &--water
+      background $colors.bug
+      box-shadow 1px 2px 3px $colors.sea
+      
+    &--toxic
+      background $colors.cat
+      box-shadow 1px 2px 3px $colors.sea
+
+    &--weapon
+      background $colors.stone
       box-shadow 1px 2px 3px $colors.sea
 </style>

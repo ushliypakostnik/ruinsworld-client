@@ -18,15 +18,17 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // Constants
 import {
-  Pick,
+  Moves,
+  Picks,
   Names,
   Audios,
   Colors,
   Animations,
   DESIGN,
   Textures,
+  Things,
 } from '@/utils/constants';
-import { EmitterEvents } from '@/models/api';
+import { EmitterEvents, IZone } from '@/models/api';
 
 // Utils
 import Capsule from '@/components/Scene/World/Math/Capsule';
@@ -70,7 +72,6 @@ export default class Hero {
   private _isFire = false;
   private _isFireOff = false;
   private _fireScale = 0;
-  private _isNotJump: boolean;
   private _isHide = false;
   private _isHideStore = false;
   private _isRun = false;
@@ -86,13 +87,11 @@ export default class Hero {
   private _isEnter = false;
   private _isDead = false;
   private _time = 0;
-  private _shotTime = 0;
-  private _isExit = false;
   private _pseudo!: Mesh;
   private _health!: number;
   private _location!: ILocation;
   private _strings: string[];
-  private _noEvent: boolean;
+  private _noEvent: string[];
 
   // Animations
   private _animation!: string;
@@ -120,7 +119,6 @@ export default class Hero {
     this._velocity = new THREE.Vector3();
     this._direction = new THREE.Vector3();
     this._directionShot = new THREE.Vector3();
-    this._isNotJump = true;
     this._isOnFloor = true;
     this._weaponDirection = new THREE.Vector3();
     this._weaponPosition = new THREE.Vector3();
@@ -128,11 +126,11 @@ export default class Hero {
     this._weaponUpVelocity = new THREE.Vector3();
     this._enduranceClock = new THREE.Clock();
     this._strings = [];
-    this._noEvent = false;
+    this._noEvent = [];
   }
 
   public init(self: ISelf): void {
-    console.log('Hero init');
+    // console.log('Hero init');
 
     this._raycaster = new THREE.Raycaster(
       new THREE.Vector3(),
@@ -338,9 +336,22 @@ export default class Hero {
 
   // Выстрел
   public shot(self: ISelf): IShot | null {
-    // Скорость стрельбы
-    if (this._shotTime > 1.5) {
-      this._shotTime = 0;
+    // Возможность и скорость стрельбы
+    if (
+      !self.store.getters['not/isMove'] &&
+      self.store.getters['not/isNotJump'] &&
+      self.store.getters['not/shotTime'] > 1.5 &&
+      self.store.getters['persist/grenades'] > 0
+    ) {
+      self.store.dispatch('not/setNotState', {
+        field: 'shotTime',
+        value: 0,
+      });
+
+      self.store.dispatch('persist/setPersistState', {
+        field: 'grenades',
+        value: self.store.getters['persist/grenades'] - 1,
+      });
 
       self.audio.replayHeroSound(Audios.shot);
       this._isOptical = self.store.getters['not/isOptical'];
@@ -351,7 +362,7 @@ export default class Hero {
       this._fireScale = 0;
       this._toggleFire(this._isOptical);
 
-      // recoil
+      // recoilG
       if (this._isOptical)
         this._velocity.add(
           self.helper
@@ -388,7 +399,7 @@ export default class Hero {
         );
       else this._position.add(this._velocity.normalize().multiplyScalar(0.25));
       this._number =
-        this._isNotJump || this._jumpStart - this._collider.end.y < 1.5
+        self.store.getters['not/isNotJump'] || this._jumpStart - this._collider.end.y < 1.5
           ? this._position.y
           : this._position.y - 1.5;
 
@@ -409,6 +420,8 @@ export default class Hero {
         directionW: 0,
         time: self.helper.getUnixtime(new Date()),
       };
+    } else if (self.store.getters['persist/grenades'] === 0) {
+      self.audio.replayHeroSound(Audios.click);
     }
     return null;
   }
@@ -446,7 +459,7 @@ export default class Hero {
         );
       }
 
-      if (this._isNotJump !== this._isOnFloor) {
+      if (self.store.getters['not/isNotJump'] !== this._isOnFloor) {
         if (!this._isOnFloor) this._jumpStart = this._collider.end.y;
         else if (this._jumpStart) {
           this._jumpFinish = this._jumpStart - this._collider.end.y;
@@ -463,7 +476,10 @@ export default class Hero {
             self.audio.replayHeroSound(Audios.jumpend);
         }
       }
-      this._isNotJump = this._isOnFloor;
+      self.store.dispatch('not/setNotState', {
+        field: 'isNotJump',
+        value: this._isOnFloor,
+      });
     }
 
     // Двери
@@ -549,7 +565,10 @@ export default class Hero {
   }
 
   public animate(self: ISelf, world: Mesh[]): void {
-    this._shotTime += self.events.delta; // Продвигаем задержку выстрелов
+    self.store.dispatch('not/setNotState', {
+      field: 'shotTime',
+      value: self.store.getters['not/shotTime'] + self.events.delta,
+    });
 
     if (!this._isEnter) this._isEnter = self.store.getters['persist/isEnter'];
     else {
@@ -596,7 +615,7 @@ export default class Hero {
         } else if (this._isEnduranceRecoveryStart && this._isRun)
           this._isEnduranceRecoveryStart = false;
 
-        if (this._isNotJump)
+        if (self.store.getters['not/isNotJump'])
           this._enduranceTime += this._enduranceClock.getDelta();
 
         if (this._enduranceTime > 0.035) {
@@ -613,14 +632,25 @@ export default class Hero {
         this._enduranceTime = 0;
       }
 
-      if (this._isNotJump) {
-        if (!this._isPause) {
+      if (this._isGameOver) {
+        self.audio.pauseHeroSound(Audios.steps);
+      } else if (self.store.getters['not/isNotJump']) {
+        if (
+          !this._isPause &&
+          !self.store.getters['not/isHelp'] &&
+          !self.store.getters['not/isChat']
+        ) {
+          this._number = this._getSpeed(
+            this._health,
+            self.store.getters['persist/toxic'],
+          );
+
           if (self.keys['KeyW']) {
             this._speed = this._isHide
-              ? 0.5 * this._getSpeed(this._health)
+              ? 0.5 * this._number
               : this._isRun
-              ? this._getSpeed(this._health) * 2
-              : this._getSpeed(this._health);
+              ? this._number * 2
+              : this._number;
             this._velocity.add(
               self.helper
                 .getForwardVector(self)
@@ -641,9 +671,7 @@ export default class Hero {
           }
 
           if (self.keys['KeyS']) {
-            this._speed = this._isHide
-              ? this._getSpeed(this._health) / 2
-              : this._getSpeed(this._health);
+            this._speed = this._isHide ? this._number / 2 : this._number;
             this._velocity.add(
               self.helper
                 .getForwardVector(self)
@@ -652,9 +680,7 @@ export default class Hero {
           }
 
           if (self.keys['KeyA']) {
-            this._speed = this._isHide
-              ? this._getSpeed(this._health) / 2
-              : this._getSpeed(this._health);
+            this._speed = this._isHide ? this._number / 2 : this._number;
             this._velocity.add(
               self.helper
                 .getSideVector(self)
@@ -663,9 +689,7 @@ export default class Hero {
           }
 
           if (self.keys['KeyD']) {
-            this._speed = this._isHide
-              ? this._getSpeed(this._health) / 2
-              : this._getSpeed(this._health);
+            this._speed = this._isHide ? this._number / 2 : this._number;
             this._velocity.add(
               self.helper
                 .getSideVector(self)
@@ -690,6 +714,18 @@ export default class Hero {
             this._speed = this._isHide ? 0.5 : this._isRun ? 2 : 1;
             self.audio.setPlaybackRateOnHeroSound(Audios.steps, this._speed);
             self.audio.startHeroSound(Audios.steps);
+            if (!self.store.getters['not/isMove'])
+              self.store.dispatch('not/setNotState', {
+                field: 'isMove',
+                value: true,
+              });
+          } else {
+            self.audio.pauseHeroSound(Audios.steps);
+            if (self.store.getters['not/isMove'])
+              self.store.dispatch('not/setNotState', {
+                field: 'isMove',
+                value: false,
+              });
           }
 
           if (self.keys['KeyW'] && !self.keys['KeyS']) {
@@ -727,6 +763,11 @@ export default class Hero {
       } else {
         self.audio.pauseHeroSound(Audios.steps);
         this._velocity.y -= DESIGN.GAMEPLAY.GRAVITY * self.events.delta;
+        if (self.store.getters['not/isMove'])
+          self.store.dispatch('not/setNotState', {
+            field: 'isMove',
+            value: false,
+          });
       }
 
       if (this._isGameOver) {
@@ -746,7 +787,7 @@ export default class Hero {
           else this._animation = this._getMove();
           this._isRunStore = this._isRun;
         } else {
-          if (!this._isNotJump && !this._isHide && !this._isPause)
+          if (!self.store.getters['not/isNotJump'] && !this._isHide && !this._isPause)
             this._animation = this._jump;
           else {
             if (this._isRun && !this._isPause) this._animation = this._run;
@@ -833,14 +874,63 @@ export default class Hero {
               ) {
                 self.store.dispatch('not/showPermanentMessage', 'point');
                 if (self.keys['KeyE']) {
-                  emitter.emit(
-                    EmitterEvents.point,
-                    this._intersection.object.uuid,
-                  );
-                  self.helper.pickDispatchHelper(self);
+                  if (!this._noEvent.includes('point')) {
+                    this._setNoEvent('point', 500);
+                    emitter.emit(EmitterEvents.point, {
+                      id: self.store.getters['persist/id'],
+                      location: this._location.id,
+                    });
+                    self.helper.pickDispatchHelper(self);
+                  }
                 }
               } else {
                 self.store.dispatch('not/showPermanentMessage', 'pointGood');
+              }
+            } else if (this._intersection.object.name.includes('TNG')) {
+              this._strings = this._intersection.object.name.split(' ');
+              self.store.dispatch('not/showPermanentMessageWithContent', {
+                message: 'pick',
+                content: this._strings[1],
+              });
+              if (self.keys['KeyE']) {
+                if (
+                  ////////////////////////////////////////////////////////
+                  ////////////////////////////////////////////////////////
+                  (this._strings[1] === Things.grenades &&
+                    self.store.getters['persist/grenades'] >=
+                      self.store.getters['persist/config'].things[
+                        Things.grenades
+                      ].max) ||
+                  (this._strings[1] === Things.vodka &&
+                    self.store.getters['persist/vodka'] >=
+                      self.store.getters['persist/config'].things[Things.vodka]
+                        .max) ||
+                  (this._strings[1] === Things.stew &&
+                    self.store.getters['persist/stew'] >=
+                      self.store.getters['persist/config'].things[Things.stew]
+                        .max)
+                ) {
+                  if (!this._noEvent.includes('full')) {
+                    this._setNoEvent('full', 500);
+                    self.audio.replayHeroSound(Audios.click);
+                    self.events.messagesByIdDispatchHelper(self, 'full');
+                  }
+                } else {
+                  if (!this._noEvent.includes('pickthing')) {
+                    this._setNoEvent('pickthing', 500);
+                    emitter.emit(EmitterEvents.pick, {
+                      type: Picks.thing,
+                      id: this._strings[0],
+                      uuid: this._intersection.object.uuid,
+                      location: this._location.id,
+                      target: this._strings[1],
+                      user: self.store.getters['persist/id'],
+                    });
+                    self.helper.pickDispatchHelper(self);
+                    if (this._strings[1] === Things.go)
+                      self.audio.replayHeroSound(Audios.gosong);
+                  }
+                }
               }
             } else if (this._intersection.object.name.includes('NPC')) {
               this._strings = this._intersection.object.name.split(' ');
@@ -849,19 +939,28 @@ export default class Hero {
                 content: this._strings[1],
               });
               if (self.keys['KeyE']) {
-                if (!this._noEvent) {
+                if (!this._noEvent.includes('picknpc')) {
+                  this._setNoEvent('picknpc', 500);
                   emitter.emit(EmitterEvents.pick, {
-                    type: Pick.dead,
+                    type: Picks.dead,
                     id: this._strings[0],
                     uuid: this._intersection.object.uuid,
                     location: this._location.id,
-                    text: this._strings[1],
+                    target: this._strings[1],
                     user: self.store.getters['persist/id'],
                   });
-                  this._noEvent = true;
-                  setTimeout(() => {
-                    this._noEvent = false;
-                  }, 500);
+                  self.helper.pickDispatchHelper(self);
+                }
+              }
+            } else if (this._intersection.object.name === 'well') {
+              self.store.dispatch('not/showPermanentMessage', 'well');
+              if (self.keys['KeyE']) {
+                if (!this._noEvent.includes('well')) {
+                  this._setNoEvent('well', 500);
+                  self.store.dispatch('persist/setPersistState', {
+                    field: 'water',
+                    value: 100,
+                  });
                   self.helper.pickDispatchHelper(self);
                 }
               }
@@ -879,6 +978,33 @@ export default class Hero {
     }
   }
 
+  // Для простого троттлинга событий
+  private _setNoEvent(event: string, delay?: number) {
+    this._noEvent.push(event);
+    setTimeout(() => {
+      this._noEvent = this._noEvent.filter((e) => e !== event);
+    }, delay || 500);
+  }
+
+  public check(self: ISelf, zones: IZone[]) {
+    if (
+      zones.some((zone) =>
+        self.helper.isInCircle(
+          { x: zone.x, z: zone.z },
+          { x: self.camera.position.x, z: self.camera.position.z },
+          zone.radius,
+        ),
+      )
+    ) {
+      self.events.messagesByIdDispatchHelper(self, 'toxiczone');
+      if (self.store.getters['persist/toxic'] < 100)
+        self.store.dispatch('persist/setPersistState', {
+          field: 'toxic',
+          value: self.store.getters['persist/toxic'] + 5,
+        });
+    }
+  }
+
   // Проверить позицию
   private _checkPosition(self: ISelf) {
     if (
@@ -889,10 +1015,16 @@ export default class Hero {
         self.camera.position.z,
       ) >
         DESIGN.SIZE * 0.55 &&
-      !this._isExit
+      !self.store.getters['persist/isExit']
     ) {
-      self.events.messagesByIdDispatchHelper(self, 'exitOn');
-      this._isExit = true;
+      self.store
+        .dispatch('persist/setPersistState', {
+          field: 'isExit',
+          value: true,
+        })
+        .then(() => {
+          self.events.messagesByIdDispatchHelper(self, 'exitOn');
+        });
     }
 
     if (
@@ -903,10 +1035,16 @@ export default class Hero {
         self.camera.position.z,
       ) <
         DESIGN.SIZE * 0.55 &&
-      this._isExit
+      self.store.getters['persist/isExit']
     ) {
-      self.events.messagesByIdDispatchHelper(self, 'exitOff');
-      this._isExit = false;
+      self.store
+        .dispatch('persist/setPersistState', {
+          field: 'isExit',
+          value: false,
+        })
+        .then(() => {
+          self.events.messagesByIdDispatchHelper(self, 'exitOff');
+        });
     }
 
     // Выход на другую локацию
@@ -925,11 +1063,11 @@ export default class Hero {
       if (
         Math.abs(self.camera.position.x) >= Math.abs(self.camera.position.z)
       ) {
-        if (isRight) result = 'right';
-        else result = 'left';
+        if (isRight) result = Moves.right;
+        else result = Moves.left;
       } else {
-        if (isBottom) result = 'bottom';
-        else result = 'top';
+        if (isBottom) result = Moves.bottom;
+        else result = Moves.top;
       }
       emitter.emit(EmitterEvents.relocation, result);
       relocationDispatchHelper(self.store);
@@ -960,7 +1098,13 @@ export default class Hero {
   }
 
   // Скорость
-  private _getSpeed(health: number) {
-    return (health < 25 ? 0.125 : health / 200) * DESIGN.GAMEPLAY.PLAYER_SPEED;
+  private _getSpeed(health: number, toxic: number) {
+    this._number = toxic > 66 ? 0.66 : toxic / 100;
+
+    return (
+      (health < 50
+        ? 0.5 / (1 + this._number)
+        : health / 100 / (1 + this._number)) * DESIGN.GAMEPLAY.PLAYER_SPEED
+    );
   }
 }
