@@ -861,23 +861,9 @@ export default class Enemies {
           this._user.directionY,
           this._user.directionZ,
           this._user.directionW,
-        ),
+        ).invert(),
       );
-      this._modelClone.rotateY(-Math.PI / 2 - 0.3);
       this._pseudoClone.quaternion.copy(this._modelClone.quaternion);
-
-      /*
-      this._direction = new THREE.Vector3(
-        this._user.directionX,
-        this._user.directionY,
-        this._user.directionZ,
-      );
-      if (this._direction.y > 0)
-        this._modelClone.rotation.y =
-          2 * Math.atan2(this._user.directionX, this._user.directionY);
-      else if (this._direction.y <= 0)
-        this._modelClone.rotation.y =
-          -2 * Math.atan2(this._user.directionX, this._user.directionY); */
 
       this._scaleClone = self.scene.getObjectByProperty(
         'uuid',

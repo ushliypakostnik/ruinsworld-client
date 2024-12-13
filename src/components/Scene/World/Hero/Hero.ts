@@ -821,10 +821,8 @@ export default class Hero {
 
         this._toruch.position.copy(self.camera.position);
         this._pseudo.position.copy(self.camera.position);
-        this._pseudo.quaternion.copy(self.camera.quaternion).invert();
-        this._pseudo.rotation.x = 0;
-        this._pseudo.rotation.z = 0;
-        this._pseudo.rotateY(Math.PI / 4);
+
+        this._pseudo.rotation.y = self.camera.rotation.y;
 
         self.store.dispatch('api/setApiState', {
           field: 'updates',
