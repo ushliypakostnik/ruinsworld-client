@@ -44,6 +44,7 @@ export default class Things {
   private _idsList: string[];
   private _idsListNew: string[];
   private _thing!: IThing;
+  private _number!: number;
 
   constructor() {
     this._list = [];
@@ -136,7 +137,12 @@ export default class Things {
     this._modelGo.add(this._pseudoClone);
     this._modelGo.add(this._pseudoClone2);
     this._modelGo.add(this._pseudoClone3);
-
+    /* this._modelGo.add(new THREE.Mesh(
+      new THREE.BoxBufferGeometry(0.5, 10, 0.5),
+      new THREE.MeshStandardMaterial({
+        color: Colors.white,
+      })),
+    ); */
     this._pseudo = new THREE.Mesh(
       new THREE.BoxBufferGeometry(2, 2, 2),
       self.assets.getMaterial(Textures.pseudo),
@@ -156,6 +162,7 @@ export default class Things {
   }
 
   private _addThing(self: ISelf, thing: IThing): void {
+    this._number = 0.1;
     switch (thing.type) {
       case ThingsEnum.vodka:
         this._modelClone = this._modelVodka.clone();
@@ -168,17 +175,18 @@ export default class Things {
         break;
       case ThingsEnum.go:
         this._modelClone = this._modelGo.clone();
+        this._number = -0.1;
         break;
     }
 
     this._pseudoClone = this._pseudo.clone();
 
     this._modelClone.scale.set(0.5, 0.5, 0.5);
-    this._modelClone.position.set(thing.x, thing.type === ThingsEnum.go ? -0.8 : -1 * thing.y - 1, thing.z);
+    this._modelClone.position.set(thing.x, thing.y + this._number, thing.z);
     this._modelClone.rotateY(self.helper.degreesToRadians(thing.rotateY));
     this._modelClone.rotateX(self.helper.degreesToRadians(thing.rotateX));
 
-    this._pseudoClone.position.set(thing.x, -1 * thing.y - 0.75, thing.z);
+    this._pseudoClone.position.set(thing.x, thing.y + 0.25, thing.z);
     this._pseudoClone.rotateY(self.helper.degreesToRadians(thing.rotateY));
     this._pseudoClone.name = `${thing.id} ${thing.type}`;
 

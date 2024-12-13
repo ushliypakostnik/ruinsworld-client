@@ -800,23 +800,24 @@ export default class Hero {
         if (this._isGameOver) {
           this._velocity.x = 0;
           this._velocity.z = 0;
+        } else {
+          this._collider.translate(
+            this._velocity.clone().multiplyScalar(self.events.delta),
+          );
+
+          this._playerCollitions(self);
+
+          if (this._collider.end.y < 0) {
+            this._collider.end.y = 0;
+            this._collider.start.y = DESIGN.GAMEPLAY.PLAYER_HEIGHT;
+          }
+  
+          self.camera.position.set(
+            this._collider.end.x,
+            this._collider.end.y - (!this._isHide ? 0 : 1.5),
+            this._collider.end.z,
+          );
         }
-        this._collider.translate(
-          this._velocity.clone().multiplyScalar(self.events.delta),
-        );
-
-        this._playerCollitions(self);
-
-        if (this._collider.end.y < 0) {
-          this._collider.end.y = 0;
-          this._collider.start.y = DESIGN.GAMEPLAY.PLAYER_HEIGHT;
-        }
-
-        self.camera.position.set(
-          this._collider.end.x,
-          this._collider.end.y - (!this._isHide ? 0 : 1.5),
-          this._collider.end.z,
-        );
 
         this._toruch.position.copy(self.camera.position);
         this._pseudo.position.copy(self.camera.position);

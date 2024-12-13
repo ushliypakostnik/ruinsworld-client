@@ -32,6 +32,7 @@ export default class Assets {
   private _go!: Texture;
   private _trash!: Texture;
   private _road!: Texture;
+  private _wood!: Texture;
 
   // Loaders
   public GLTFLoader: GLTFLoader;
@@ -65,11 +66,6 @@ export default class Assets {
   public zombiehit!: AudioBuffer;
   public zombiedead!: AudioBuffer;
 
-  // Bidens
-  public bidensidle!: AudioBuffer;
-  public bidenshit!: AudioBuffer;
-  public bidensdead!: AudioBuffer;
-
   // Mutant
   public mutantdead!: AudioBuffer;
   public mutantjumpend!: AudioBuffer;
@@ -86,12 +82,6 @@ export default class Assets {
   public soldierhit!: AudioBuffer;
   public soldieridle!: AudioBuffer;
   public soldierdead!: AudioBuffer;
-
-  // Cyborg
-  public cyborghit!: AudioBuffer;
-  public cyborgdead!: AudioBuffer;
-  public cyborgsteps!: AudioBuffer;
-  public cyborgidle!: AudioBuffer;
 
   constructor() {
     this.GLTFLoader = new GLTFLoader();
@@ -115,6 +105,7 @@ export default class Assets {
     this._go = self.helper.textureLoaderHelper(self, Textures.go);
     this._trash = self.helper.textureLoaderHelper(self, Textures.trash);
     this._road = self.helper.textureLoaderHelper(self, Textures.road);
+    this._wood = self.helper.textureLoaderHelper(self, Textures.wood);
 
     // Audio
 
@@ -230,29 +221,6 @@ export default class Assets {
       self.audio.initAudioByName(self, Audios.zombiedead);
     });
 
-    // Bidens
-
-    this.audioLoader.load(`./audio/${Audios.bidensidle}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.bidensidle, false);
-      this.bidensidle = buffer;
-
-      self.audio.initAudioByName(self, Audios.bidensidle);
-    });
-
-    this.audioLoader.load(`./audio/${Audios.bidenshit}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.bidenshit, false);
-      this.bidenshit = buffer;
-
-      self.audio.initAudioByName(self, Audios.bidenshit);
-    });
-
-    this.audioLoader.load(`./audio/${Audios.bidensdead}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.bidensdead, false);
-      this.bidensdead = buffer;
-
-      self.audio.initAudioByName(self, Audios.bidensdead);
-    });
-    
     // Mutant
 
     this.audioLoader.load(`./audio/${Audios.mutantdead}.mp3`, (buffer) => {
@@ -336,36 +304,6 @@ export default class Assets {
       self.audio.initAudioByName(self, Audios.soldierdead);
     });
 
-    // Cyborg
-
-    this.audioLoader.load(`./audio/${Audios.cyborghit}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.cyborghit, false);
-      this.cyborghit = buffer;
-
-      self.audio.initAudioByName(self, Audios.cyborghit);
-    });
-
-    this.audioLoader.load(`./audio/${Audios.cyborgdead}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.cyborgdead, false);
-      this.cyborgdead = buffer;
-
-      self.audio.initAudioByName(self, Audios.cyborgdead);
-    });
-
-    this.audioLoader.load(`./audio/${Audios.cyborgsteps}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.cyborgsteps, false);
-      this.cyborgsteps = buffer;
-
-      self.audio.initAudioByName(self, Audios.cyborgsteps);
-    });
-
-    this.audioLoader.load(`./audio/${Audios.cyborgidle}.mp3`, (buffer) => {
-      self.helper.loaderDispatchHelper(self.store, Audios.cyborgidle, false);
-      this.cyborgidle = buffer;
-
-      self.audio.initAudioByName(self, Audios.cyborgidle);
-    });
-
     // На герое
     self.helper.setAudioToHeroHelper(self, Audios.wind);
     self.helper.setAudioToHeroHelper(self, Audios.jumpstart, this.jumpstart);
@@ -416,6 +354,8 @@ export default class Assets {
           child.material = this.getMaterial(Textures.blood);
         } else if (child.name.includes(Textures.vodka)) {
           child.material = this.getMaterial(Textures.vodka);
+        } else if (child.name.includes(Textures.wood)) {
+          child.material = this.getMaterial(Textures.wood);
         }
       }
     });
@@ -443,6 +383,8 @@ export default class Assets {
         return this._trash;
       case Textures.road:
         return this._road;
+      case Textures.wood:
+        return this._wood;
       case Textures.concrette:
       default:
         return this._concrette;
@@ -458,6 +400,7 @@ export default class Assets {
       case Textures.glassspecial:
         return 16;
       case Textures.road:
+      case Textures.wood:
         return 8;
       case Textures.concrette:
       case Textures.concrette2:
@@ -501,7 +444,8 @@ export default class Assets {
           side: THREE.DoubleSide,
         });
       case Textures.grass:
-        return new THREE.MeshPhongMaterial({
+        return new THREE.MeshStandardMaterial({
+          map: this.getTexture(Textures.glass),
           color: Colors.grass,
         });
       case Textures.scale:
@@ -539,6 +483,12 @@ export default class Assets {
         return new THREE.MeshStandardMaterial({
           map: this.getTexture(name),
           color: Colors.yellow,
+        });
+      case Textures.wood:
+        return new THREE.MeshStandardMaterial({
+          map: this.getTexture(name),
+          color: Colors.yellow,
+          side: THREE.DoubleSide,
         });
       case Textures.fire:
         return new THREE.MeshStandardMaterial({
@@ -596,12 +546,12 @@ export default class Assets {
         });
       case Textures.playerred:
         return new THREE.MeshStandardMaterial({
-          map: this.getTexture(name),
+          map: this.getTexture(Textures.fire),
           color: Colors.red,
         });
       case Textures.playerblue:
         return new THREE.MeshStandardMaterial({
-          map: this.getTexture(name),
+          map: this.getTexture(Textures.purple),
           color: Colors.blue,
         });
     }
@@ -623,9 +573,7 @@ export default class Assets {
       case Audios.mutantidle:
         return 0.3;
       case Audios.soldieridle:
-      case Audios.cyborgsteps:
         return 0.4;
-      case Audios.cyborgidle:
       case Audios.orcidle:
       case Audios.dead:
         return 0.5;
@@ -640,26 +588,21 @@ export default class Assets {
         return 0.8;
       case Audios.light:
         return 0.9;
-      case Audios.cyborghit:
-      case Audios.bidensidle:
       case Audios.explosion:
       case Audios.jumpstart:
       case Audios.zombiehit:
       case Audios.zombiedead:
       case Audios.soldierdead:
       case Audios.soldierhit:
-      case Audios.cyborgdead:
       case Audios.orcdead:
       case Audios.orchit:
       case Audios.mutanthit:
       case Audios.mutantdead:
-      case Audios.bidensdead:
-      case Audios.bidenshit:
       case Audios.door:
       case Audios.gosong:
+      default:
         return 1;
     }
-    return DESIGN.DEFAULT_VOLUME;
   }
 
   // Получить звук
@@ -686,12 +629,6 @@ export default class Assets {
         return this.zombiehit;
       case Audios.zombiedead:
         return this.zombiedead;
-      case Audios.bidensidle:
-        return this.bidensidle;
-      case Audios.bidenshit:
-        return this.bidenshit;
-      case Audios.bidensdead:
-        return this.bidensdead;
       case Audios.mutantdead:
         return this.mutantdead;
       case Audios.mutantjumpend:
@@ -714,14 +651,6 @@ export default class Assets {
         return this.soldierhit;
       case Audios.soldierdead:
         return this.soldierdead;
-      case Audios.cyborgdead:
-        return this.cyborgdead;
-      case Audios.cyborghit:
-        return this.cyborghit;
-      case Audios.cyborgsteps:
-        return this.cyborgsteps;
-      case Audios.cyborgidle:
-        return this.cyborgidle;
       case Audios.light:
         return this.light;
     }

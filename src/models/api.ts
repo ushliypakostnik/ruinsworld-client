@@ -68,6 +68,7 @@ export interface IStone {
 
 export interface IStone2 {
   x: number;
+  y: number;
   z: number;
   scale: number;
   rotateY: number;
@@ -76,6 +77,7 @@ export interface IStone2 {
 
 export interface IPin {
   x: number;
+  y: number;
   z: number;
   scale: number;
   rotateY: number;
@@ -105,6 +107,7 @@ export interface ITrash {
 
 export interface IWell {
   x: number;
+  y: number;
   z: number;
   rotate: number;
 }
@@ -142,7 +145,6 @@ export interface IPoint {
 
 export interface IGrassScene {
   model: Group;
-  model2: Group;
   rotate: number;
 }
 
@@ -174,6 +176,7 @@ export interface ILocation {
   wells: IWell[];
   zones: IZone[];
   trashes: ITrash[];
+  trashes2: ITrash[];
 }
 
 // Движущийся объект принадлежащий игроку (выстрел) или сам игрок
@@ -257,6 +260,7 @@ export interface IUnitThree extends IUnit {
   pseudo: string;
   sound: string;
   scale: string;
+  flag: string;
   weapon: string;
   fire: string;
   text: typeof Text;

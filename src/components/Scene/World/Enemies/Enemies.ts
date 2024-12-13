@@ -42,7 +42,6 @@ export default class Enemies {
 
   private _gltf!: GLTF;
   private _modelHuman!: Group;
-  private _modelReptil!: Group;
   private _modelClone!: Group;
   private _pseudo!: Mesh;
   private _pseudoClone!: Mesh;
@@ -50,6 +49,9 @@ export default class Enemies {
   private _soundClone!: Mesh;
   private _scale!: Mesh;
   private _scaleClone!: Mesh;
+  private _flagRed!: Mesh;
+  private _flagBlue!: Mesh;
+  private _flagClone!: Mesh;
   private _name!: Text;
   private _isHide = false;
   private _isMove = false;
@@ -140,6 +142,7 @@ export default class Enemies {
       },
     );
 
+    /*
     self.assets.GLTFLoader.load(
       `./images/models/${Races.reptiloid}.glb`,
       (model: GLTF) => {
@@ -161,7 +164,7 @@ export default class Enemies {
           Races.reptiloid as unknown as Names,
         );
       },
-    );
+    ); */
 
     const pseudoGeometry = new THREE.BoxBufferGeometry(
       0.6,
@@ -180,10 +183,17 @@ export default class Enemies {
     );
     this._sound.visible = false;
 
-    const scaleGeometry = new THREE.PlaneBufferGeometry(1, 0.05);
     this._scale = new THREE.Mesh(
-      scaleGeometry,
+      new THREE.PlaneBufferGeometry(1, 0.05),
       self.assets.getMaterial(Textures.scale),
+    );
+    this._flagRed = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.15, 8, 8),
+      self.assets.getMaterial(Textures.playerred),
+    );
+    this._flagBlue = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.15, 8, 8),
+      self.assets.getMaterial(Textures.playerblue),
     );
 
     // Реагировать на переход на другую локацию
@@ -213,9 +223,7 @@ export default class Enemies {
     // console.log('Enemies _addPlayer(): ', player);
     this._isHide = player.animation.includes('hide');
 
-    if (player.race === Races.reptiloid)
-      this._modelClone = clone(this._modelReptil);
-    else this._modelClone = clone(this._modelHuman);
+    this._modelClone = clone(this._modelHuman);
 
     this._pseudoClone = this._pseudo.clone();
     if (this._isHide) this._pseudoClone.scale.set(1, 0.6, 1);
@@ -224,6 +232,10 @@ export default class Enemies {
     this._soundClone = this._sound.clone();
 
     this._scaleClone = this._scale.clone();
+
+    if (player.race === Races.human)
+      this._flagClone = this._flagRed.clone();
+    else this._flagClone = this._flagBlue.clone();
 
     this._name = new Text();
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -276,6 +288,7 @@ export default class Enemies {
       pseudo: this._pseudoClone.uuid,
       sound: this._soundClone.uuid,
       scale: this._scaleClone.uuid,
+      flag: this._flagClone.uuid,
       weapon: this._weaponClone.uuid,
       fire: this._weaponFire.uuid,
       text: this._name,
@@ -307,6 +320,7 @@ export default class Enemies {
     self.scene.add(this._pseudoClone);
     self.scene.add(this._soundClone);
     self.scene.add(this._scaleClone);
+    self.scene.add(this._flagClone);
     self.scene.add(this._weaponClone);
 
     // Добавляем звуки
@@ -351,6 +365,11 @@ export default class Enemies {
       player.scale,
     ) as Mesh;
     if (this._scaleClone) this._scaleClone.removeFromParent();
+    this._flagClone = self.scene.getObjectByProperty(
+      'uuid',
+      player.flag,
+    ) as Mesh;
+    if (this._flagClone) this._flagClone.removeFromParent();
     this._weaponClone = self.scene.getObjectByProperty(
       'uuid',
       player.weapon,
@@ -388,7 +407,10 @@ export default class Enemies {
       this._timeRegeneration += self.events.delta;
 
       // Востановление здоровья игрока - героя - странно, но именно здесь
-      if (this._timeRegeneration > 0.25 && !self.store.getters['persist/isGameOver']) {
+      if (
+        this._timeRegeneration > 0.25 &&
+        !self.store.getters['persist/isGameOver']
+      ) {
         this._id = self.store.getters['persist/id'];
         this._user = self.store.getters['api/game'].users.find(
           (user: IUnit) => user.id === this._id,
@@ -669,6 +691,7 @@ export default class Enemies {
           ) as Mesh;
           if (this._weaponClone.visible) this._weaponClone.visible = false;
           if (this._scaleClone.visible) this._scaleClone.visible = false;
+          if (this._flagClone.visible) this._flagClone.visible = false;
           self.audio.replayObjectSound(user.sound, Audios.dead);
           user.isDead = true;
         }
@@ -875,6 +898,21 @@ export default class Enemies {
         1,
         this._user.health / 100,
       );
+
+      this._flagClone = self.scene.getObjectByProperty(
+        'uuid',
+        user.flag,
+      ) as Mesh;
+      if (this._flagClone) {
+        this._flagClone.setRotationFromMatrix(self.camera.matrix);
+        this._flagClone.position.set(
+          this._modelClone.position.x,
+          this._modelClone.position.y -
+            DESIGN.GAMEPLAY.PLAYER_HEIGHT / 2 +
+            (!this._isHide ? 4 : 3.25),
+          this._modelClone.position.z,
+        );
+      }
 
       this._name = user.text;
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

@@ -143,7 +143,6 @@ export default class AudioBus {
       switch (name) {
         case Audios.steps:
         case Audios.mutantsteps:
-        case Audios.cyborgsteps:
         case Audios.zombieidle:
         case Audios.mutantidle:
         case Audios.soldieridle:

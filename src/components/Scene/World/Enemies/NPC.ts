@@ -37,19 +37,15 @@ export default class NPC {
   public name = Names.zombies;
 
   private _gltf!: GLTF;
-  private _gltfBidens!: GLTF;
   private _gltfMutant!: GLTF;
   private _gltfOrc!: GLTF;
   private _gltfZombie!: GLTF;
   private _gltfSoldier!: GLTF;
-  private _gltfCyborg!: GLTF;
   private _modelClone!: Group;
-  private _modelBidens!: Group;
   private _modelMutant!: Group;
   private _modelOrc!: Group;
   private _modelZombie!: Group;
   private _modelSoldier!: Group;
-  private _modelCyborg!: Group;
   private _mixer!: AnimationMixer;
   private _pseudoClone!: Mesh;
   private _sound!: Mesh;
@@ -58,6 +54,9 @@ export default class NPC {
   private _weaponClone!: Group;
   private _scale!: Mesh;
   private _scaleClone!: Mesh;
+  private _flagRed!: Mesh;
+  private _flagBlue!: Mesh;
+  private _flagClone!: Mesh;
   private _list: IUnitThree[];
   private _listNew: IUnit[];
   private _unit!: IUnit;
@@ -108,31 +107,16 @@ export default class NPC {
     );
 
     const models = [
-      Races.bidens,
       Races.mutant,
       Races.orc,
       Races.zombie,
       Races.soldier,
-      Races.cyborg,
     ];
     models.forEach((name) => {
       self.assets.GLTFLoader.load(
         `./images/models/NPC/${name}.glb`,
         (model: GLTF) => {
           switch (name) {
-            case Races.bidens:
-              this._gltfBidens = model;
-              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfBidens.animations);
-
-              this._modelBidens = this._gltfBidens.scene;
-              this._modelBidens.traverse((child: any) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                if (child.isMesh) {
-                  child.castShadow = true;
-                }
-              });
-              break;
             case Races.mutant:
               this._gltfMutant = model;
               // console.log(`NPC ${name} ANIMATIONS: `, this._gltfMutant.animations);
@@ -172,25 +156,13 @@ export default class NPC {
                 }
               });
               break;
+            case Races.cyborg:
             case Races.soldier:
               this._gltfSoldier = model;
               // console.log(`NPC ${name} ANIMATIONS: `, this._gltfSoldier.animations);
 
               this._modelSoldier = this._gltfSoldier.scene;
               this._modelSoldier.traverse((child: any) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                if (child.isMesh) {
-                  child.castShadow = true;
-                }
-              });
-              break;
-            case Races.cyborg:
-              this._gltfCyborg = model;
-              // console.log(`NPC ${name} ANIMATIONS: `, this._gltfCyborg.animations);
-
-              this._modelCyborg = this._gltfCyborg.scene;
-              this._modelCyborg.traverse((child: any) => {
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 if (child.isMesh) {
@@ -220,6 +192,16 @@ export default class NPC {
     this._scale = new THREE.Mesh(
       scaleGeometry,
       self.assets.getMaterial(Textures.scale),
+    );
+
+    // Флаг
+    this._flagRed = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.15, 8, 8),
+      self.assets.getMaterial(Textures.playerred),
+    );
+    this._flagBlue = new THREE.Mesh(
+      new THREE.SphereBufferGeometry(0.15, 8, 8),
+      self.assets.getMaterial(Textures.playerblue),
     );
 
     // Реагировать на подбор
@@ -280,6 +262,17 @@ export default class NPC {
     if (RacesConfig[unit.race].isWeapon) {
       this._weaponClone = this._weapon.clone();
       this._weaponClone.visible = false;
+
+      if (unit.race === Races.cyborg)
+        this._flagClone = this._flagRed.clone();
+      else this._flagClone = this._flagBlue.clone();
+
+      this._flagClone.setRotationFromMatrix(self.camera.matrix);
+      this._flagClone.position.set(
+        this._flagClone.position.x,
+        this._flagClone.position.y + this._box.y + 2.5,
+        this._flagClone.position.z,
+      );
     }
 
     if (unit.animation === 'dead') {
@@ -337,6 +330,7 @@ export default class NPC {
       pseudo: this._pseudoClone.uuid,
       sound: this._soundClone.uuid,
       scale: this._scaleClone.uuid,
+      flag: RacesConfig[unit.race].isWeapon ? this._flagClone.uuid : '',
       weapon: RacesConfig[unit.race].isWeapon ? this._weaponClone.uuid : '',
       fire: '',
       text: this._name,
@@ -372,6 +366,7 @@ export default class NPC {
     if (RacesConfig[unit.race].isWeapon) self.scene.add(this._weaponClone);
     if (unit.animation !== 'dead') {
       self.scene.add(this._scaleClone);
+      if (RacesConfig[unit.race].isWeapon) self.scene.add(this._flagClone);
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       self.scene.add(this._name);
@@ -416,6 +411,11 @@ export default class NPC {
     ) as Mesh;
     if (this._scaleClone) this._scaleClone.removeFromParent();
     if (RacesConfig[unit.race].isWeapon) {
+      this._flagClone = self.scene.getObjectByProperty(
+        'uuid',
+        unit.flag,
+      ) as Mesh;
+      if (this._flagClone) this._flagClone.removeFromParent();
       this._weaponClone = self.scene.getObjectByProperty(
         'uuid',
         unit.weapon,
@@ -582,6 +582,22 @@ export default class NPC {
           );
         }
 
+        // Флаг
+        if (RacesConfig[unit.race].isWeapon) {
+          this._flagClone = self.scene.getObjectByProperty(
+            'uuid',
+            unit.flag,
+          ) as Mesh;
+          if (this._flagClone) {
+            this._flagClone.setRotationFromMatrix(self.camera.matrix);
+            this._flagClone.position.set(
+              this._modelClone.position.x,
+              this._modelClone.position.y + this._box.y + 2.5,
+              this._modelClone.position.z,
+            );
+          }
+        }
+
         // Уровень
         unit.text.text = Math.round(Number(info.exp));
         unit.text.setRotationFromMatrix(self.camera.matrix);
@@ -680,6 +696,13 @@ export default class NPC {
           }
 
           if (this._scaleClone) this._scaleClone.visible = false;
+          if (RacesConfig[unit.race].isWeapon) {
+            this._flagClone = self.scene.getObjectByProperty(
+              'uuid',
+              unit.flag,
+            ) as Mesh;
+            if (this._flagClone) this._flagClone.visible = false;
+          }
           unit.text.visible = false;
           setTimeout(() => {
             unit.isDead = true; // Все!
@@ -849,8 +872,6 @@ export default class NPC {
     // console.log('NPC: ', self.store.getters['api/game'].npc.length);
     if (!this._isReady) {
       this._isReady =
-        Boolean(this._modelBidens) &&
-        Boolean(this._modelCyborg) &&
         Boolean(this._modelMutant) &&
         Boolean(this._modelSoldier) &&
         Boolean(this._modelZombie) &&
@@ -973,7 +994,7 @@ export default class NPC {
       ),
     ); // Не показываем только что рожденных
     this._usersLength = self.store.getters['api/game'].users.length - 1;
-    if (this._usersLength < 10)
+    if (this._usersLength < 5)
       this._npcLength = Number(process.env.VUE_APP_ITEMS) - this._usersLength;
     else this._npcLength = 5;
     this._listNewMin = this._listNew
@@ -1056,18 +1077,15 @@ export default class NPC {
 
   private _getModelCloneByRace(race: Races) {
     switch (race) {
-      case Races.bidens:
-        return clone(this._modelBidens);
       case Races.mutant:
         return clone(this._modelMutant);
       case Races.orc:
         return clone(this._modelOrc);
       case Races.zombie:
         return clone(this._modelZombie);
+      case Races.cyborg:
       case Races.soldier:
         return clone(this._modelSoldier);
-      case Races.cyborg:
-        return clone(this._modelCyborg);
     }
   }
 
@@ -1104,9 +1122,6 @@ export default class NPC {
     isStart = false,
   ): AnimationAction {
     switch (race) {
-      case Races.bidens:
-        this._gltf = this._gltfBidens;
-        break;
       case Races.mutant:
         this._gltf = this._gltfMutant;
         break;
@@ -1116,11 +1131,9 @@ export default class NPC {
       case Races.zombie:
         this._gltf = this._gltfZombie;
         break;
+      case Races.cyborg:
       case Races.soldier:
         this._gltf = this._gltfSoldier;
-        break;
-      case Races.cyborg:
-        this._gltf = this._gltfCyborg;
         break;
     }
     switch (name) {
@@ -1161,21 +1174,6 @@ export default class NPC {
 
   private _setSounds(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
-        self.audio.addAudioOnObject(self, unit.sound, Audios.mutantsteps);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.mutantjumpend);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.bidensidle);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.bidenshit);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.bidensdead);
-
-        self.audio.setVolumeOnObjectSound(unit.sound, Audios.jumpstart, 1);
-        self.audio.setPlaybackRateOnObjectSound(
-          unit.sound,
-          Audios.mutantsteps,
-          1.6,
-        );
-        break;
       case Races.mutant:
         self.audio.addAudioOnObject(self, unit.sound, Audios.mutantsteps);
         self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
@@ -1214,6 +1212,7 @@ export default class NPC {
         self.audio.setVolumeOnObjectSound(unit.sound, Audios.steps, 0.5);
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
         break;
+      case Races.cyborg:
       case Races.soldier:
         self.audio.addAudioOnObject(self, unit.sound, Audios.steps);
         self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
@@ -1225,28 +1224,11 @@ export default class NPC {
         self.audio.setVolumeOnObjectSound(unit.sound, Audios.steps, 0.5);
         self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
         break;
-      case Races.cyborg:
-        self.audio.addAudioOnObject(self, unit.sound, Audios.cyborgsteps);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpstart);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.jumpend);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.cyborghit);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.cyborgidle);
-        self.audio.addAudioOnObject(self, unit.sound, Audios.cyborgdead);
-
-        self.audio.setPlaybackRateOnObjectSound(
-          unit.sound,
-          Audios.cyborgsteps,
-          1.7,
-        );
-        break;
     }
   }
 
   private _playHit(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
-        self.audio.replayObjectSound(unit.sound, Audios.bidenshit);
-        break;
       case Races.mutant:
         self.audio.replayObjectSound(unit.sound, Audios.mutanthit);
         break;
@@ -1256,24 +1238,15 @@ export default class NPC {
       case Races.zombie:
         self.audio.replayObjectSound(unit.sound, Audios.zombiehit);
         break;
+      case Races.cyborg:
       case Races.soldier:
         self.audio.replayObjectSound(unit.sound, Audios.soldierhit);
-        break;
-      case Races.cyborg:
-        self.audio.replayObjectSound(unit.sound, Audios.cyborghit);
         break;
     }
   }
 
   private _playDead(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
-        if (unit.isIdlePlay)
-          self.audio.stopObjectSound(unit.sound, Audios.bidensidle);
-        if (unit.isStepsPlay)
-          self.audio.stopObjectSound(unit.sound, Audios.mutantsteps);
-        self.audio.startObjectSound(unit.sound, Audios.bidensdead);
-        break;
       case Races.mutant:
         if (unit.isIdlePlay)
           self.audio.stopObjectSound(unit.sound, Audios.mutantidle);
@@ -1295,6 +1268,7 @@ export default class NPC {
           self.audio.stopObjectSound(unit.sound, Audios.steps);
         self.audio.startObjectSound(unit.sound, Audios.zombiedead);
         break;
+      case Races.cyborg:
       case Races.soldier:
         if (unit.isIdlePlay)
           self.audio.stopObjectSound(unit.sound, Audios.soldieridle);
@@ -1302,36 +1276,25 @@ export default class NPC {
           self.audio.stopObjectSound(unit.sound, Audios.steps);
         self.audio.startObjectSound(unit.sound, Audios.soldierdead);
         break;
-      case Races.cyborg:
-        if (unit.isIdlePlay)
-          self.audio.stopObjectSound(unit.sound, Audios.cyborgidle);
-        if (unit.isStepsPlay)
-          self.audio.stopObjectSound(unit.sound, Audios.cyborgsteps);
-        self.audio.startObjectSound(unit.sound, Audios.cyborgdead);
-        break;
     }
   }
 
   private _startSteps(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
       case Races.mutant:
         self.audio.startObjectSound(unit.sound, Audios.mutantsteps);
         break;
       case Races.orc:
       case Races.zombie:
       case Races.soldier:
-        self.audio.startObjectSound(unit.sound, Audios.steps);
-        break;
       case Races.cyborg:
-        self.audio.startObjectSound(unit.sound, Audios.cyborgsteps);
+        self.audio.startObjectSound(unit.sound, Audios.steps);
         break;
     }
   }
 
   private _pauseSteps(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
       case Races.mutant:
         self.audio.pauseObjectSound(unit.sound, Audios.mutantsteps);
         break;
@@ -1340,17 +1303,14 @@ export default class NPC {
         break;
       case Races.zombie:
       case Races.soldier:
-        self.audio.pauseObjectSound(unit.sound, Audios.steps);
-        break;
       case Races.cyborg:
-        self.audio.pauseObjectSound(unit.sound, Audios.cyborgsteps);
+        self.audio.pauseObjectSound(unit.sound, Audios.steps);
         break;
     }
   }
 
   private _setStepsToRun(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
       case Races.mutant:
         self.audio.setPlaybackRateOnObjectSound(
           unit.sound,
@@ -1363,21 +1323,14 @@ export default class NPC {
         break;
       case Races.zombie:
       case Races.soldier:
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.8);
-        break;
       case Races.cyborg:
-        self.audio.setPlaybackRateOnObjectSound(
-          unit.sound,
-          Audios.cyborgsteps,
-          1.8,
-        );
+        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.8);
         break;
     }
   }
 
   private _setStepsToWalk(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
       case Races.mutant:
         self.audio.setPlaybackRateOnObjectSound(
           unit.sound,
@@ -1390,23 +1343,14 @@ export default class NPC {
         break;
       case Races.zombie:
       case Races.soldier:
-        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
-        break;
       case Races.cyborg:
-        self.audio.setPlaybackRateOnObjectSound(
-          unit.sound,
-          Audios.cyborgsteps,
-          1.5,
-        );
+        self.audio.setPlaybackRateOnObjectSound(unit.sound, Audios.steps, 0.6);
         break;
     }
   }
 
   private _startIdle(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
-        self.audio.startObjectSound(unit.sound, Audios.bidensidle);
-        break;
       case Races.zombie:
         self.audio.startObjectSound(unit.sound, Audios.zombieidle);
         break;
@@ -1417,19 +1361,14 @@ export default class NPC {
         self.audio.startObjectSound(unit.sound, Audios.orcidle);
         break;
       case Races.soldier:
-        self.audio.startObjectSound(unit.sound, Audios.soldieridle);
-        break;
       case Races.cyborg:
-        self.audio.startObjectSound(unit.sound, Audios.cyborgidle);
+        self.audio.startObjectSound(unit.sound, Audios.soldieridle);
         break;
     }
   }
 
   private _pauseIdle(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
-        self.audio.pauseObjectSound(unit.sound, Audios.bidensidle);
-        break;
       case Races.zombie:
         self.audio.pauseObjectSound(unit.sound, Audios.zombieidle);
         break;
@@ -1440,17 +1379,14 @@ export default class NPC {
         self.audio.pauseObjectSound(unit.sound, Audios.orcidle);
         break;
       case Races.soldier:
-        self.audio.pauseObjectSound(unit.sound, Audios.soldieridle);
-        break;
       case Races.cyborg:
-        self.audio.pauseObjectSound(unit.sound, Audios.cyborgidle);
+        self.audio.pauseObjectSound(unit.sound, Audios.soldieridle);
         break;
     }
   }
 
   private _playJump(self: ISelf, unit: IUnitThree) {
     switch (unit.race) {
-      case Races.bidens:
       case Races.mutant:
         self.audio.startObjectSound(unit.sound, Audios.mutantjumpend);
         break;
@@ -1471,18 +1407,6 @@ export default class NPC {
     height: number,
   ): void {
     switch (unit.race) {
-      case Races.bidens:
-        box.scale.set(2, 0.4, 3.5);
-        box.position
-          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
-          .add(
-            self.helper
-              .getForwardVectorFromObject(box)
-              .negate()
-              .multiplyScalar(4),
-          )
-          .add(self.helper.getSideVectorFromObject(box).multiplyScalar(1.5));
-        break;
       case Races.mutant:
         box.scale.set(1.5, 0.6, 2.5);
         box.position
@@ -1520,24 +1444,13 @@ export default class NPC {
             self.helper.getForwardVectorFromObject(box).multiplyScalar(0.25),
           );
         break;
+      case Races.cyborg:
       case Races.soldier:
         box.scale.set(6, 0.5, 6);
         box.position
           .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
           .add(self.helper.getForwardVectorFromObject(box).multiplyScalar(1.5))
           .add(self.helper.getSideVectorFromObject(box).multiplyScalar(0.55));
-        break;
-      case Races.cyborg:
-        box.scale.set(2.7, 0.5, 2.7);
-        box.position
-          .set(unit.positionX, unit.positionY - height / 2, unit.positionZ)
-          .add(
-            self.helper
-              .getForwardVectorFromObject(box)
-              .negate()
-              .multiplyScalar(1),
-          )
-          .add(self.helper.getSideVectorFromObject(box).multiplyScalar(0.25));
         break;
     }
 

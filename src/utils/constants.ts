@@ -14,7 +14,7 @@ export enum Races {
   reptiloid = 'reptiloid',
 
   // NPC
-  bidens = 'bidens',
+  // bidens = 'bidens',
   mutant = 'mutant',
   orc = 'orc',
   zombie = 'zombie',
@@ -123,6 +123,7 @@ export enum Textures {
   sky = 'sky',
   night = 'night',
   ground = 'ground',
+  ground2 = 'ground2',
   concrette = 'concrette',
   concrette2 = 'concrette2',
   glass = 'glass',
@@ -146,6 +147,7 @@ export enum Textures {
   trash = 'trash',
   road = 'road',
   yellow = 'yellow',
+  wood = 'wood',
 }
 
 export enum Audios {
@@ -176,9 +178,9 @@ export enum Audios {
   zombiedead = 'zombiedead',
   
   // Bidens
-  bidensidle = 'bidensidle',
-  bidenshit = 'bidenshit',
-  bidensdead = 'bidensdead',
+  // bidensidle = 'bidensidle',
+  // bidenshit = 'bidenshit',
+  // bidensdead = 'bidensdead',
 
   // Mutant
   mutantdead = 'mutantdead',
@@ -198,10 +200,10 @@ export enum Audios {
   soldierdead = 'soldierdead',
 
   // Cyborg
-  cyborghit = 'cyborghit',
-  cyborgdead = 'cyborgdead',
-  cyborgsteps = 'cyborgsteps',
-  cyborgidle = 'cyborgidle',
+  // cyborghit = 'cyborghit',
+  // cyborgdead = 'cyborgdead',
+  // cyborgsteps = 'cyborgsteps',
+  // cyborgidle = 'cyborgidle',
 }
 
 export enum Colors {
@@ -214,12 +216,12 @@ export enum Colors {
   toruch = 0xffff99,
   sky = 0x77deac,
   metall = 0x999999,
-  metall2 = 0xee99aa,
+  metall2 = 0xaa9999,
   fire = 0xff6666,
   scale = 0x681a13,
   glass = 0xaaaaaa,
   blood = 0x8d0000,
-  grass = 0x030500,
+  grass = 0x0aaf09,
   red = 0xff0000,
   blue = 0x0000ff,
   bluelight = 0x00bfff,
@@ -280,10 +282,11 @@ export const RacesConfig = {
     box: { x: 0.6, y: 1.8, z: 0.75 },
     isWeapon: true,
   },
+  /*
   [Races.bidens]: {
     box: { x: 4.5, y: 9.7, z: 3 },
     isWeapon: false,
-  },
+  }, */
   [Races.mutant]: {
     box: { x: 4, y: 5, z: 2.5 },
     isWeapon: false,
@@ -301,7 +304,7 @@ export const RacesConfig = {
     isWeapon: true,
   },
   [Races.cyborg]: {
-    box: { x: 1.2, y: 2.8, z: 1.1 },
+    box: { x: 0.6, y: 1.8, z: 0.75 },
     isWeapon: true,
   },
 };
@@ -360,7 +363,7 @@ export const MESSAGES: TMessages = {
 
     help1: 'Plot and basic rules',
     help2: 'Controls and dials',
-    help3: 'Кaces',
+    help3: 'NPC',
     help4: 'Items',
     help5: 'Features',
     help6: 'Author',
@@ -375,6 +378,7 @@ export const MESSAGES: TMessages = {
     rule1: 'In the center of each location there are control points and shelters. You can set and change flags on them. If you died in a location that already belongs to your race, then you will be reborn on it. Otherwise - at the original command post of the race, where the flag cannot be changed.',
     rule2: 'The speed of control depends on the character’s health level and the degree of his poisoning. Players cannot fire heavy weapons while moving or jumping.',
     rule3: 'Now the magic and energy weapons of the NPCs are breaking through the walls. Players with a low level should not be careful and not allow themselves to be hit with a long-range shot.',
+    rule4: 'Be careful when moving between locations. It’s better to stock up on stewed meat and vodka - you can go straight into a poisoned area or be attacked by the nepis walking there.',
 
     scale11: 'Red scale',
     scale12: 'shows the character\'s health level.',
@@ -388,9 +392,7 @@ export const MESSAGES: TMessages = {
     scale52: 'shows the level of poisoning.',
     scalemore: 'To the right of the scales there are icons for quick access to items (press keys 1 ... 0 to apply), indicators of their current and maximum quantity in the backpack. In the right corner you see the number of available charges for weapons, as well as their maximum number that can be collected.',
 
-    playersraces: 'Playable races',
-    playersracestext: 'Damage power and regeneration increase with level. Experience points are taken away when consuming certain items (for example, vodka).',
-    nonplayersraces: 'NPC',
+    friendnpc: 'Helps one of the game races!',
     nonplayersracestext: 'As time passes, units gain experience. When picking up their corpses, players receive experience points and poisoning relative to it. Regeneration in older individuals slows down. Putin\'s cyborgs help the Rebels, have increased intelligence (responsible for visibility and speed of decision-making), and agile NATO members accept the Reptilians as a new power and order on the planet.',
     things: 'Items',
     thingstext: 'Some items, such as shots for weapons, are “applied” immediately when picked up. Others - you can dial a limited number and use them via shortcut keys whenever it is convenient for you.',
@@ -438,14 +440,13 @@ export const MESSAGES: TMessages = {
     close: 'Close chat',
     send: 'Send message',
 
-    [Races.human]: 'Russian rebel',
+    [Races.human]: 'Red commander',
     [Races.reptiloid]: 'Reptiloid',
-    [Races.bidens]: 'Bidens',
     [Races.zombie]: 'Radfeministka',
     [Races.mutant]: 'Narcomutant',
     [Races.orc]: 'Alcoork',
     [Races.soldier]: 'NATO soldier',
-    [Races.cyborg]: 'Putin\'s cyborg',
+    [Races.cyborg]: 'Red soldier',
 
     [Things.grenades]: 'Grenades',
     [Things.vodka]: 'Vodka',
@@ -481,12 +482,12 @@ export const MESSAGES: TMessages = {
 
     help1: 'Фабула и правила',
     help2: 'Управление и шкалы',
-    help3: 'Расы',
+    help3: 'Неписи',
     help4: 'Предметы',
     help5: 'Планы разработки',
     help6: 'Автор',
 
-    feature1: '* Несколько видов разного оружия. Не только гранаты - быстросрельное и лазерное. Мины.',
+    feature1: '* Несколько видов разного оружия. Не только гранаты - быстрострельное и лазерное. Мины.',
     feature2: '* Летающие неписи. Охраняющие локации от игроков дроны. Птицы для охоты.',
     feature3: '* Больше предметов. Предметы-модификаторы для более интересного боя.',
 
@@ -494,6 +495,7 @@ export const MESSAGES: TMessages = {
     rule1: 'В центре каждой локации есть контрольные точки, укрытия. На них можно устанавливать и менять флаги. Если вы погибли на локации которая уже принадлежит вашей расе - то переродитесь на ней. В противном случае - на исходном командном пункте расы, на котором нельзя поменять флаг.',
     rule2: 'Cкорость контрола зависит от уровня здоровья персонажа и степени его отравления. Игроки не могут стрелять из тяжелого оружия когда перемешаются или прыгают.',
     rule3: 'Сейчас магия и энергетическое оружие неписей - пробивают сквозь стены. Игрокам с низким уровнем, стоит быть осторожнее, и не доводить до удара дальним по себе.',
+    rule4: 'Будьте внимательными при переходе между локациями. Лучше запаситесь тушенкой и водкой - вы можете перейти прямо в отравленную местность или под удар прогуливающейся там неписи.',
 
     author: 'Левон Алексеевич Гамбарян',
 
@@ -509,9 +511,7 @@ export const MESSAGES: TMessages = {
     scale52: 'показывает уровень отравления.',
     scalemore: 'Справа от шкал располагаются пиктограммы быстрого доступа к предметам (нажмите клавиши 1 ... 0 чтобы применить), индикаторы их актуального и максимального количества в рюкзаке. В правом углу вы видете количество имеющихся зарядов для оружия, а также их маскимальное количество которое можно собрать.',
 
-    playersraces: 'Игровые расы',
-    playersracestext: 'Сила урона и регенерация растут вместе с уровнем. Очки опыта отнимаются при употреблении некоторых предметов (например - водки).',
-    nonplayersraces: 'Неписи',
+    friendnpc: 'Помогает одной из игровых рас!',
     nonplayersracestext: 'С ходом времени юниты получают опыт. При подборе их трупов игроки получают очки опыта и отравление относительно него. Регенерация у более старых особей - замедляется. Киборги Путина помогают Повстанцам, имеют повышенный интеллект (отвечает за обзор и скорость принятия решений), а проворные Натовцы - принимают Рептилоидов как новую власть, порядок на планете.',
     things: 'Предметы',
     thingstext: 'Некоторые предметы, например, выстрелы к оружию, "применяются" сразу при подборе. Другие - можно набирать некоторое ограниченное количество и применять через клавиши быстрого доступа когда вам удобно.',
@@ -559,14 +559,13 @@ export const MESSAGES: TMessages = {
     close: 'Закрыть',
     send: 'Отправить',
 
-    [Races.human]: 'Русский повстанец',
+    [Races.human]: 'Красный коммандир',
     [Races.reptiloid]: 'Рептилоид',
-    [Races.bidens]: 'Байденс',
     [Races.zombie]: 'Радфеминистка',
     [Races.mutant]: 'Наркомутант',
     [Races.orc]: 'Алкоорк',
     [Races.soldier]: 'Натовец',
-    [Races.cyborg]: 'Киборг Путина',
+    [Races.cyborg]: 'Красный солдат',
 
     [Things.grenades]: 'Гранаты',
     [Things.vodka]: 'Водка',

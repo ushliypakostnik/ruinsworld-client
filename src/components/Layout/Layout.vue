@@ -18,7 +18,7 @@
             <div class="layout__header layout__header--noenter">
               {{ $t('name') }}
             </div>
-            <div div class="layout__version">v{{ config.version }}</div>
+            <div v-if="config" class="layout__version">v{{ config.version }}</div>
 
             <LangSwitch />
 

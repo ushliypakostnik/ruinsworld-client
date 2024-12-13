@@ -48,7 +48,7 @@ export default class Zones {
     );
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    this._blood2.material.opacity = 5;
+    this._blood2.material.opacity = 0.5;
     this._blood3 = new THREE.Mesh(
       new THREE.SphereBufferGeometry(1, 8, 8),
       self.assets.getMaterial(Textures.purple),

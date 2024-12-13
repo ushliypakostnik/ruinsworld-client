@@ -69,6 +69,7 @@
               <div class="help__item">{{ $t('rule1') }}</div>
               <div class="help__item">{{ $t('rule2') }}</div>
               <div class="help__item">{{ $t('rule3') }}</div>
+              <div class="help__item">{{ $t('rule4') }}</div>
             </div>
           </div>
           <div v-if="active === 5">
@@ -128,56 +129,7 @@
           </div>
           <div v-if="active === 3">
             <div class="help__info-wrapper">
-              <div class="help__title">{{ $t('nonplayersraces') }}</div>
               <div class="help__subtitle">{{ $t('nonplayersracestext') }}</div>
-
-              <div class="help__race">
-                <div class="help__race-image help__race-image--bidens" />
-                <div>
-                  <div class="help__race-name">{{ $t(`${Races.bidens}`) }}</div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`enemy`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.reptiloid}`) }}, {{ $t(`${Races.mutant}`) }},
-                    {{ $t(`${Races.orc}`) }}, {{ $t(`${Races.soldier}`) }},
-                    {{ $t(`${Races.cyborg}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`important`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.reptiloid}`) }}, {{ $t(`${Races.orc}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`kick`) }}:
-                    {{ config.races[`${Races.bidens}`].kick * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`attack`) }}:
-                    {{ config.races[`${Races.bidens}`].attack * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`regeneration`) }}:
-                    {{ config.races[`${Races.bidens}`].regeneration * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`intelligence`) }}:
-                    {{ config.races[`${Races.bidens}`].intelligence * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`armor`) }}:
-                    {{ config.races[`${Races.bidens}`].armor * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`exp`) }}: {{ config.races[`${Races.bidens}`].exp }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`toxic`) }}:
-                    {{ config.races[`${Races.bidens}`].toxic }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`speed`) }}:
-                    {{ config.races[`${Races.bidens}`].speed * 10 }}
-                  </div>
-                </div>
-              </div>
 
               <div class="help__race">
                 <div class="help__race-image help__race-image--zombie" />
@@ -227,12 +179,59 @@
               </div>
 
               <div class="help__race">
+                <div class="help__race-image help__race-image--orc" />
+                <div>
+                  <div class="help__race-name">{{ $t(`${Races.orc}`) }}</div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`enemy`) }}: {{ $t(`${Races.human}`) }},
+                    {{ $t(`${Races.reptiloid}`) }},
+                    {{ $t(`${Races.mutant}`) }}, {{ $t(`${Races.soldier}`) }},
+                    {{ $t(`${Races.cyborg}`) }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`important`) }}: {{ $t(`${Races.human}`) }},
+                    {{ $t(`${Races.reptiloid}`) }}, {{ $t(`${Races.mutant}`) }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`kick`) }}:
+                    {{ config.races[`${Races.orc}`].kick * 10 }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`attack`) }}:
+                    {{ config.races[`${Races.orc}`].attack * 10 }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`regeneration`) }}:
+                    {{ config.races[`${Races.orc}`].regeneration * 10 }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`intelligence`) }}:
+                    {{ config.races[`${Races.orc}`].intelligence * 10 }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`armor`) }}:
+                    {{ config.races[`${Races.orc}`].armor * 10 }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`exp`) }}: {{ config.races[`${Races.orc}`].exp }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`toxic`) }}: {{ config.races[`${Races.orc}`].toxic }}
+                  </div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`speed`) }}:
+                    {{ config.races[`${Races.orc}`].speed * 10 }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="help__race">
                 <div class="help__race-image help__race-image--mutant" />
                 <div>
                   <div class="help__race-name">{{ $t(`${Races.mutant}`) }}</div>
                   <div class="help__сharacteristic">
                     {{ $t(`enemy`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.reptiloid}`) }}, {{ $t(`${Races.bidens}`) }},
+                    {{ $t(`${Races.reptiloid}`) }},
                     {{ $t(`${Races.orc}`) }}, {{ $t(`${Races.soldier}`) }},
                     {{ $t(`${Races.cyborg}`) }}
                   </div>
@@ -275,115 +274,15 @@
               </div>
 
               <div class="help__race">
-                <div class="help__race-image help__race-image--orc" />
-                <div>
-                  <div class="help__race-name">{{ $t(`${Races.orc}`) }}</div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`enemy`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.reptiloid}`) }}, {{ $t(`${Races.bidens}`) }},
-                    {{ $t(`${Races.mutant}`) }}, {{ $t(`${Races.soldier}`) }},
-                    {{ $t(`${Races.cyborg}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`important`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.reptiloid}`) }}, {{ $t(`${Races.mutant}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`kick`) }}:
-                    {{ config.races[`${Races.orc}`].kick * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`attack`) }}:
-                    {{ config.races[`${Races.orc}`].attack * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`regeneration`) }}:
-                    {{ config.races[`${Races.orc}`].regeneration * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`intelligence`) }}:
-                    {{ config.races[`${Races.orc}`].intelligence * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`armor`) }}:
-                    {{ config.races[`${Races.orc}`].armor * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`exp`) }}: {{ config.races[`${Races.orc}`].exp }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`toxic`) }}: {{ config.races[`${Races.orc}`].toxic }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`speed`) }}:
-                    {{ config.races[`${Races.orc}`].speed * 10 }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="help__race">
-                <div class="help__race-image help__race-image--cyborg" />
-                <div>
-                  <div class="help__race-name">{{ $t(`${Races.cyborg}`) }}</div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`enemy`) }}: {{ $t(`${Races.reptiloid}`) }},
-                    {{ $t(`${Races.bidens}`) }}, {{ $t(`${Races.mutant}`) }},
-                    {{ $t(`${Races.orc}`) }}, {{ $t(`${Races.soldier}`) }},
-                    {{ $t(`${Races.zombie}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`important`) }}: {{ $t(`${Races.reptiloid}`) }},
-                    {{ $t(`${Races.soldier}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`kick`) }}:
-                    {{ config.races[`${Races.cyborg}`].kick * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`attack`) }}:
-                    {{ config.races[`${Races.cyborg}`].attack * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`regeneration`) }}:
-                    {{ config.races[`${Races.cyborg}`].regeneration * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`intelligence`) }}:
-                    {{ config.races[`${Races.cyborg}`].intelligence * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`armor`) }}:
-                    {{ config.races[`${Races.cyborg}`].armor * 10 }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`exp`) }}: {{ config.races[`${Races.cyborg}`].exp }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`toxic`) }}:
-                    {{ config.races[`${Races.cyborg}`].toxic }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`speed`) }}:
-                    {{ config.races[`${Races.cyborg}`].speed * 10 }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="help__race">
                 <div class="help__race-image help__race-image--soldier" />
                 <div>
-                  <div class="help__race-name">
-                    {{ $t(`${Races.soldier}`) }}
+                  <div class="help__race-name">{{ $t(`${Races.soldier}`) }}</div>
+                  <div class="help__сharacteristic">
+                    {{ $t(`enemy`) }}:
+                    {{ $t(`${Races.orc}`) }}, {{ $t(`${Races.mutant}`) }}, {{ $t(`${Races.zombie}`) }}
                   </div>
                   <div class="help__сharacteristic">
-                    {{ $t(`enemy`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.bidens}`) }}, {{ $t(`${Races.mutant}`) }},
-                    {{ $t(`${Races.orc}`) }}, {{ $t(`${Races.cyborg}`) }},
-                    {{ $t(`${Races.zombie}`) }}
-                  </div>
-                  <div class="help__сharacteristic">
-                    {{ $t(`important`) }}: {{ $t(`${Races.human}`) }},
-                    {{ $t(`${Races.cyborg}`) }}
+                    {{ $t(`friendnpc`) }}
                   </div>
                   <div class="help__сharacteristic">
                     {{ $t(`kick`) }}:
@@ -415,25 +314,6 @@
                   <div class="help__сharacteristic">
                     {{ $t(`speed`) }}:
                     {{ config.races[`${Races.soldier}`].speed * 10 }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="help__title">{{ $t('playersraces') }}</div>
-              <div class="help__subtitle">{{ $t('playersracestext') }}</div>
-
-              <div class="help__race">
-                <div class="help__race-image help__race-image--human" />
-                <div>
-                  <div class="help__race-name">{{ $t(`${Races.human}`) }}</div>
-                </div>
-              </div>
-
-              <div class="help__race">
-                <div class="help__race-image help__race-image--reptiloid" />
-                <div>
-                  <div class="help__race-name">
-                    {{ $t(`${Races.reptiloid}`) }}
                   </div>
                 </div>
               </div>
@@ -727,9 +607,10 @@ $name = '.help'
         background url("../../assets/reptiloid.jpg") no-repeat center center
         background-size cover
 
+      /*
       &--bidens
         background url("../../assets/bidens.jpg") no-repeat center center
-        background-size cover
+        background-size cover */
 
       &--zombie
         background url("../../assets/zombie.jpg") no-repeat center center
@@ -743,9 +624,13 @@ $name = '.help'
         background url("../../assets/orc.jpg") no-repeat center center
         background-size cover
 
+      /*
+
       &--cyborg
         background url("../../assets/cyborg.jpg") no-repeat center center
         background-size cover
+
+      */
 
       &--soldier
         background url("../../assets/soldier.jpg") no-repeat center center

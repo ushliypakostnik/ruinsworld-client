@@ -14,11 +14,11 @@ const initialState: IPreloader = {
   // Textures
   skyIsLoaded: false,
   groundIsLoaded: false,
+  ground2IsLoaded: false,
 
   // Models
   treesIsLoaded: false,
   stonesIsLoaded: false,
-  stones2IsLoaded: false,
   grassesIsLoaded: false,
   pointsIsLoaded: false,
 
@@ -29,10 +29,10 @@ const initialState: IPreloader = {
   // World build
   skyIsBuild: false,
   groundIsBuild: false,
+  ground2IsBuild: false,
   treesIsBuild: false,
   grassesIsBuild: false,
   stonesIsBuild: false,
-  stones2IsBuild: false,
   pointsIsBuild: false,
   wellsIsBuild: false,
   buildsIsBuild: false,

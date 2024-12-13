@@ -26,6 +26,7 @@ const initialState: IPreloader = {
   goIsLoaded: false,
   trashIsLoaded: false,
   roadIsLoaded: false,
+  woodIsLoaded: false,
 
   // Models
   weaponEnemiesIsLoaded: false,
@@ -33,15 +34,15 @@ const initialState: IPreloader = {
   weaponNPCIsLoaded: false,
 
   [`${Races.human}${IS_LOADED}`]: false,
-  [`${Races.reptiloid}${IS_LOADED}`]: false,
+  // [`${Races.reptiloid}${IS_LOADED}`]: false,
 
   // Для теста - выключить в ложь тестируюемую
-  [`${Races.bidens}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  // [`${Races.bidens}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
   [`${Races.mutant}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
   [`${Races.orc}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
   [`${Races.zombie}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
   [`${Races.soldier}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
-  [`${Races.cyborg}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
+  // [`${Races.cyborg}${IS_LOADED}`]: Number(process.env.VUE_APP_TEST_MODE) ? true : false, 
 
   // Audio
 
@@ -69,9 +70,9 @@ const initialState: IPreloader = {
   zombiedeadIsLoaded: false,
 
   // Bidens
-  bidensidleIsLoaded: false,
-  bidenshitIsLoaded: false,
-  bidensdeadIsLoaded: false,
+  // bidensidleIsLoaded: false,
+  // bidenshitIsLoaded: false,
+  // bidensdeadIsLoaded: false,
 
   // Mutant
   mutantdeadIsLoaded: false,
@@ -91,10 +92,10 @@ const initialState: IPreloader = {
   soldierdeadIsLoaded: false,
 
   // Cyborg
-  cyborgidleIsLoaded: false,
-  cyborghitIsLoaded: false,
-  cyborgdeadIsLoaded: false,
-  cyborgstepsIsLoaded: false,
+  // cyborgidleIsLoaded: false,
+  // cyborghitIsLoaded: false,
+  // cyborgdeadIsLoaded: false,
+  // cyborgstepsIsLoaded: false,
 
   // Things
   vodkaIsLoaded: false,

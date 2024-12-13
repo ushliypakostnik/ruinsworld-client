@@ -4,7 +4,7 @@
 
 <script>
 /* eslint-disable */
-import { mapGetters, mapActions, mapMutation } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 
 // Constants
 import { EmitterEvents } from '@/models/api';
