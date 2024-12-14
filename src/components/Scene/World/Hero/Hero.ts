@@ -399,7 +399,8 @@ export default class Hero {
         );
       else this._position.add(this._velocity.normalize().multiplyScalar(0.25));
       this._number =
-        self.store.getters['not/isNotJump'] || this._jumpStart - this._collider.end.y < 1.5
+        self.store.getters['not/isNotJump'] ||
+        this._jumpStart - this._collider.end.y < 1.5
           ? this._position.y
           : this._position.y - 1.5;
 
@@ -787,7 +788,11 @@ export default class Hero {
           else this._animation = this._getMove();
           this._isRunStore = this._isRun;
         } else {
-          if (!self.store.getters['not/isNotJump'] && !this._isHide && !this._isPause)
+          if (
+            !self.store.getters['not/isNotJump'] &&
+            !this._isHide &&
+            !this._isPause
+          )
             this._animation = this._jump;
           else {
             if (this._isRun && !this._isPause) this._animation = this._run;
@@ -811,7 +816,7 @@ export default class Hero {
             this._collider.end.y = 0;
             this._collider.start.y = DESIGN.GAMEPLAY.PLAYER_HEIGHT;
           }
-  
+
           self.camera.position.set(
             this._collider.end.x,
             this._collider.end.y - (!this._isHide ? 0 : 1.5),
@@ -862,8 +867,14 @@ export default class Hero {
                 );
             } else if (this._intersection.object.name.includes('points')) {
               if (
-                (this._location.x === -3 && this._location.y === -3) ||
-                (this._location.x === 3 && this._location.y === 3)
+                (this._location.x ===
+                  self.store.getters['persist/config'].humansX &&
+                  this._location.y ===
+                    self.store.getters['persist/config'].humansY) ||
+                (this._location.x ===
+                  self.store.getters['persist/config'].reptilsX &&
+                  this._location.y ===
+                    self.store.getters['persist/config'].reptilsY)
               ) {
                 self.store.dispatch('not/showPermanentMessage', 'pointStart');
               } else if (
