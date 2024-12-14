@@ -1006,8 +1006,8 @@ export default class NPC {
             this._v2.distanceTo(self.camera.position)
           );
         })
-        // Берем не больше 15ти ближайших
-        .slice(0, 15).length - 1;
+        // Берем не больше N ближайших
+        .slice(0, Number(process.env.VUE_APP_ITEMS)).length - 1;
 
     // Берем только ближайщиx в зависимости от количества игроков в локации
     
