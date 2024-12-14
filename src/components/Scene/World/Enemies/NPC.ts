@@ -106,12 +106,7 @@ export default class NPC {
       },
     );
 
-    const models = [
-      Races.mutant,
-      Races.orc,
-      Races.zombie,
-      Races.soldier,
-    ];
+    const models = [Races.mutant, Races.orc, Races.zombie, Races.soldier];
     models.forEach((name) => {
       self.assets.GLTFLoader.load(
         `./images/models/NPC/${name}.glb`,
@@ -248,7 +243,7 @@ export default class NPC {
     );
     this._pseudoClone.name = `${unit.id} ${unit.race}`;
     this._pseudoClone.visible = process.env.VUE_APP_TEST_MODE === '1';
-      Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
+    Number(process.env.VUE_APP_TEST_MODE) === 1 ? true : false;
 
     this._soundClone = this._sound.clone();
     this._scaleClone = this._scale.clone();
@@ -263,8 +258,7 @@ export default class NPC {
       this._weaponClone = this._weapon.clone();
       this._weaponClone.visible = false;
 
-      if (unit.race === Races.cyborg)
-        this._flagClone = this._flagRed.clone();
+      if (unit.race === Races.cyborg) this._flagClone = this._flagRed.clone();
       else this._flagClone = this._flagBlue.clone();
 
       this._flagClone.setRotationFromMatrix(self.camera.matrix);
@@ -822,10 +816,12 @@ export default class NPC {
               }
               if (
                 !(
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-ignore
-                  unit.nextAction['_clip'].name === 'attack' &&
-                  (unit.race === Races.cyborg || unit.race === Races.soldier)
+                  (
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    unit.nextAction['_clip'].name === 'attack' &&
+                    (unit.race === Races.cyborg || unit.race === Races.soldier)
+                  )
                 )
               ) {
                 setTimeout(() => {
@@ -986,17 +982,39 @@ export default class NPC {
 
   // Оптимизация - показываем определенное количество ближайщих неписей
   private _setNewList(self: ISelf): void {
+    // Не показываем только что рожденных (они "падают" на поверхность мира)
     this._listNew = JSON.parse(
       JSON.stringify(
         self.store.getters['api/game'].npc.filter(
           (unit: { lifecycle: Lifecycle }) => unit.lifecycle !== Lifecycle.born,
         ),
       ),
-    ); // Не показываем только что рожденных
-    this._usersLength = self.store.getters['api/game'].users.length - 1;
+    );
+
+    this._usersLength =
+      self.store.getters['api/game'].users
+        // Не показываем тех кто ждет загрузки при переходе локации
+        .filter(
+          (unit: { lifecycle: Lifecycle }) => unit.lifecycle !== Lifecycle.born,
+        )
+        .sort((a: IUnit, b: IUnit) => {
+          this._v1 = new THREE.Vector3(a.positionX, a.positionY, a.positionZ);
+          this._v2 = new THREE.Vector3(b.positionX, b.positionY, b.positionZ);
+
+          return (
+            this._v1.distanceTo(self.camera.position) -
+            this._v2.distanceTo(self.camera.position)
+          );
+        })
+        // Берем не больше 15ти ближайших
+        .slice(0, 15).length - 1;
+
+    // Берем только ближайщиx в зависимости от количества игроков в локации
+    
     if (this._usersLength < 5)
       this._npcLength = Number(process.env.VUE_APP_ITEMS) - this._usersLength;
     else this._npcLength = 5;
+    
     this._listNewMin = this._listNew
       .sort((a: IUnit, b: IUnit) => {
         this._v1 = new THREE.Vector3(a.positionX, a.positionY, a.positionZ);
@@ -1007,7 +1025,7 @@ export default class NPC {
           this._v2.distanceTo(self.camera.position)
         );
       })
-      .slice(0, this._npcLength); // Берем только ближайщиx в зависимости от количества игроков в локации
+      .slice(0, this._npcLength);
     this._idsListNew = this._listNewMin.map((npc: IUnit) => {
       return npc.id;
     });
