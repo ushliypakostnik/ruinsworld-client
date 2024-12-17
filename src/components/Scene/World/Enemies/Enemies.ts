@@ -917,23 +917,61 @@ export default class Enemies {
         this._animation = user.nextAction['_clip'].name;
 
         this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.5);
-        this._weaponClone.position.add(
-          self.helper
-            .getForwardVectorFromObject(this._modelClone)
-            .multiplyScalar(-0.75),
-        ).add(
-          self.helper
-            .getSideVectorFromObject(this._weaponClone)
-            .multiplyScalar(0.2),
-        );
+        this._weaponClone.position
+          .add(
+            self.helper
+              .getForwardVectorFromObject(this._modelClone)
+              .multiplyScalar(-0.75),
+          )
+          .add(
+            self.helper
+              .getSideVectorFromObject(this._weaponClone)
+              .multiplyScalar(0.2),
+          );
 
-        if (this._animation.includes('hide')) {
+        if (this._animation === 'hide') {
           this._weaponClone.position.y -= 0.5;
+        } else if (this._animation.includes('hide')) {
+          this._weaponClone.position.y -= 0.3;
         }
 
-        if (this._animation.includes('firestand')) {
+        if (this._animation === 'firestand' || this._animation === 'firehide') {
           this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0);
           this._weaponClone.position.y += 0.2;
+        }
+
+        if (this._animation === 'run') {
+          this._weaponClone.position.y += 0.1;
+          this._weaponClone.position.add(
+            self.helper
+              .getForwardVectorFromObject(this._modelClone)
+              .multiplyScalar(-0.2),
+          );
+        }
+
+        if (
+          this._animation === 'standleft' ||
+          this._animation === 'standright'
+        ) {
+          this._weaponClone.position.y -= 0.1;
+          this._weaponClone.position.add(
+            self.helper
+              .getSideVectorFromObject(this._weaponClone)
+              .multiplyScalar(-0.35),
+          );
+        }
+
+        if (
+          this._animation === 'standleft' ||
+          this._animation === 'standright' ||
+          this._animation === 'standforward' ||
+          this._animation === 'standback'
+        ) {
+          this._weaponClone.position.add(
+            self.helper
+              .getSideVectorFromObject(this._weaponClone)
+              .multiplyScalar(0.1),
+          );
         }
 
         if (this._animation === 'jump') {
