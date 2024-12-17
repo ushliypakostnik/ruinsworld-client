@@ -66,8 +66,10 @@
               :class="{
                 'map__point--dead': unit.isDead,
                 'map__point--me': id === unit.id,
-                'map__point--human': unit.race === Races.human && id !== unit.id,
-                'map__point--reptiloid': unit.race === Races.reptiloid && id !== unit.id,
+                'map__point--human':
+                  unit.race === Races.human && id !== unit.id,
+                'map__point--reptiloid':
+                  unit.race === Races.reptiloid && id !== unit.id,
                 'map__point--enemy':
                   unit.race !== Races.human &&
                   unit.race !== Races.reptiloid &&
@@ -76,50 +78,56 @@
                 'map__point--friend-human':
                   unit.race !== Races.human &&
                   unit.race !== Races.reptiloid &&
-                  (unit.race === Races.cyborg && race === Races.human),
+                  unit.race === Races.cyborg &&
+                  race === Races.human,
                 'map__point--friend-reptiloid':
                   unit.race !== Races.human &&
                   unit.race !== Races.reptiloid &&
-                  (unit.race === Races.soldier && race === Races.reptiloid),
+                  unit.race === Races.soldier &&
+                  race === Races.reptiloid,
               }"
-              :style="`left: calc(${unit.x} * 46vh + 23vh); top: calc(${unit.y} * 46vh + 23vh);`"
+              :style="`left: calc(${unit.x} * 30vh + 25vh); top: calc(${unit.y} * 30vh + 25vh);`"
             />
             <div
               v-for="zone in locationData.zones"
               :key="`zone--${zone.id}`"
               class="map__zone"
-              :style="`left: calc(${zone.x / DESIGN.SIZE} * 46vh + 23vh);
-                top: calc(${zone.z / DESIGN.SIZE} * 46vh + 23vh);
-                transform: translateX(calc(-1 * ${zone.radius / (DESIGN.SIZE * 2)} * 50vh)) translateY(calc(-1 * ${zone.radius / (DESIGN.SIZE * 2)} * 50vh));
-                width: calc(${zone.radius * 2 / DESIGN.SIZE} * 46vh);
-                height: calc(${zone.radius * 2 / DESIGN.SIZE} * 46vh);`"
+              :style="`left: calc(${zone.x / size} * 30vh + 25vh);
+                top: calc(${zone.z / size} * 30vh + 25vh);
+                transform: translateX(calc(-1 * ${
+                  zone.radius / (size * 2)
+                } * 30vh)) translateY(calc(-1 * ${
+                zone.radius / (size * 2)
+              } * 30vh));
+                width: calc(${(zone.radius * 2) / size} * 30vh);
+                height: calc(${(zone.radius * 2) / size} * 30vh);`"
             />
             <div
               v-for="build in locationData.builds"
               :key="`build--${build.id}`"
               class="map__build"
-              :style="`left: calc(${build.x / DESIGN.SIZE} * 46vh + 23vh);
-                top: calc(${build.z / DESIGN.SIZE} * 46vh + 23vh);
-                width: calc(${build.scale * 2.15 / DESIGN.SIZE} * 46vh);
-                height: calc(${build.scale * 2.15 / DESIGN.SIZE} * 46vh);
+              :style="`left: calc(${build.x / size} * 30vh + 25vh);
+                top: calc(${build.z / size} * 30vh + 25vh);
+                width: calc(${build.scale / size} * 30vh);
+                height: calc(${build.scale / size} * 30vh);
                 transform: rotate(${build.rotateY}deg)`"
             />
             <div
               v-for="stone in locationData.stones3"
               :key="`zone--${stone.id}`"
               class="map__stone"
-              :style="`left: calc(${stone.x / DESIGN.SIZE} * 46vh + 23vh);
-                top: calc(${stone.z / DESIGN.SIZE} * 46vh + 23vh);
-                width: calc(${stone.scaleX / DESIGN.SIZE} * 46vh);
-                height: calc(${stone.scaleZ / DESIGN.SIZE} * 46vh);
+              :style="`left: calc(${stone.x / size} * 30vh + 25vh);
+                top: calc(${stone.z / size} * 30vh + 25vh);
+                width: calc(${stone.scaleX / size} * 30vh);
+                height: calc(${stone.scaleZ / size} * 30vh);
                 transform: rotate(${stone.rotateY}deg)`"
             />
             <div
               v-for="unit in locationData.wells"
               :key="`well--${unit.id}`"
               class="map__well"
-              :style="`left: calc(${unit.x / DESIGN.SIZE} * 46vh + 23vh);
-                top: calc(${unit.z / DESIGN.SIZE} * 46vh + 23vh);`"
+              :style="`left: calc(${unit.x / size} * 30vh + 25vh);
+                top: calc(${unit.z / size} * 30vh + 25vh);`"
             />
           </div>
         </div>
@@ -133,7 +141,7 @@ import { computed, defineComponent, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import { key } from '@/store';
 import { useI18n } from 'vue-i18n';
-import { DESIGN, Races } from '@/utils/constants';
+import { Races } from '@/utils/constants';
 
 // Components
 import Loader from '@/components/Layout/Loader.vue';
@@ -157,6 +165,7 @@ export default defineComponent({
     const locationData = computed(() => store.getters['api/locationData']);
     const hero = computed(() => store.getters['persist/id']);
     const race = computed(() => store.getters['persist/race']);
+    const size = computed(() => store.getters['persist/config']?.size || null);
 
     onMounted(() => {
       store.dispatch('api/getMap', location.value);
@@ -179,8 +188,8 @@ export default defineComponent({
       race,
       Races,
       locationData,
-      DESIGN,
       id,
+      size,
     };
   },
 });

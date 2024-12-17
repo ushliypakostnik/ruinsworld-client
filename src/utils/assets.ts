@@ -395,7 +395,7 @@ export default class Assets {
   public getRepeatByName(name: Textures): number {
     switch (name) {
       case Textures.ground:
-        return 256;
+        return 128;
       case Textures.glass:
       case Textures.glassspecial:
         return 16;

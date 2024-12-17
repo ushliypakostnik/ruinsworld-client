@@ -7,7 +7,7 @@
     <Preloader>
       <Connect />
 
-      <Scene />
+      <Scene v-if="config" :size="config.size" />
 
       <template v-if="!isEnter">
         <div class="layout__enter">

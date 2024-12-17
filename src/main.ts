@@ -39,5 +39,5 @@ const socketio = new VueSocketIO({
 });
 
 const app = createApp(App).use(i18n).use(store, key).use(socketio);
-app.config.globalProperties.emitter = emitter; // Add emmiter
+app.config.globalProperties.emitter = emitter; // Add emitter
 app.mount('#app');

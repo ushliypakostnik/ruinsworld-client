@@ -40,8 +40,12 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 export default defineComponent({
   name: 'Scene',
 
-  setup() {
+  props: ['size'],
+
+  setup(props) {
     const store = useStore(key);
+
+    // console.log('Scene: ', props.size);
 
     // Core
 
@@ -113,7 +117,7 @@ export default defineComponent({
         DESIGN.CAMERA.fov,
         container.clientWidth / container.clientHeight,
         0.1,
-        DESIGN.SIZE * 0.75,
+        props.size * 0.75,
       );
 
       // Audio listener
@@ -123,8 +127,8 @@ export default defineComponent({
       scene.background = new THREE.Color(Colors.sky);
       scene.fog = new THREE.Fog(
         DESIGN.CAMERA.fog,
-        DESIGN.SIZE / 10,
-        DESIGN.SIZE * 3,
+        props.size / 10,
+        props.size * 3,
       );
       self.scene = scene;
       self.render = render;

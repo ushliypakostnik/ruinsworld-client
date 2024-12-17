@@ -14,6 +14,7 @@ export enum EmitterEvents {
   enter = 'enter', // Назваться и зайти в игру
   onEnter = 'onEnter', // Отклик сервера о заходе
   reenter = 'reenter', // Начать сначала
+  destroy = 'destroy', // Пользователь закрыл вкладку
 
   updateToClients = 'updateToClients', // Постоянные обновления клиентам
   updateToServer = 'updateToServer', // Пришло обновление от клиента

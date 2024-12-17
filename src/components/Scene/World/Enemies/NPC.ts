@@ -28,7 +28,6 @@ import {
   Names,
   Textures,
   Races,
-  RacesConfig,
   Lifecycle,
   Picks,
 } from '@/utils/constants';
@@ -79,6 +78,7 @@ export default class NPC {
   private _box!: { x: number; y: number; z: number };
   private _isReady: boolean;
   private _name!: Text;
+  private _config: {[key: string]: any};
 
   constructor() {
     this._list = [];
@@ -90,10 +90,12 @@ export default class NPC {
     this._idsListNew = [];
     this._target = new THREE.Vector3();
     this._isReady = false;
+    this._config = {};
   }
 
   public init(self: ISelf): void {
     // console.log('NPC init!!!');
+    this._config = self.store.getters['persist/config'].races;
 
     self.assets.GLTFLoader.load(
       './images/models/weapon--npc.glb',
@@ -235,7 +237,7 @@ export default class NPC {
   private _addNPC(self: ISelf, unit: IUnit): void {
     // console.log('NPC _addNPC()!!!', unit);
 
-    this._box = RacesConfig[unit.race].box;
+    this._box = this._config[unit.race].box;
     this._modelClone = this._getModelCloneByRace(unit.race);
     this._pseudoClone = new THREE.Mesh(
       new THREE.BoxBufferGeometry(this._box.x, this._box.y, this._box.z),
@@ -254,7 +256,7 @@ export default class NPC {
       unit.positionZ,
     );
 
-    if (RacesConfig[unit.race].isWeapon) {
+    if (this._config[unit.race].isWeapon) {
       this._weaponClone = this._weapon.clone();
       this._weaponClone.visible = false;
 
@@ -324,8 +326,8 @@ export default class NPC {
       pseudo: this._pseudoClone.uuid,
       sound: this._soundClone.uuid,
       scale: this._scaleClone.uuid,
-      flag: RacesConfig[unit.race].isWeapon ? this._flagClone.uuid : '',
-      weapon: RacesConfig[unit.race].isWeapon ? this._weaponClone.uuid : '',
+      flag: this._config[unit.race].isWeapon ? this._flagClone.uuid : '',
+      weapon: this._config[unit.race].isWeapon ? this._weaponClone.uuid : '',
       fire: '',
       text: this._name,
       isHide: false,
@@ -357,10 +359,10 @@ export default class NPC {
     self.scene.add(this._modelClone);
     self.scene.add(this._pseudoClone);
     self.scene.add(this._soundClone);
-    if (RacesConfig[unit.race].isWeapon) self.scene.add(this._weaponClone);
+    if (this._config[unit.race].isWeapon) self.scene.add(this._weaponClone);
     if (unit.animation !== 'dead') {
       self.scene.add(this._scaleClone);
-      if (RacesConfig[unit.race].isWeapon) self.scene.add(this._flagClone);
+      if (this._config[unit.race].isWeapon) self.scene.add(this._flagClone);
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       self.scene.add(this._name);
@@ -404,7 +406,7 @@ export default class NPC {
       unit.scale,
     ) as Mesh;
     if (this._scaleClone) this._scaleClone.removeFromParent();
-    if (RacesConfig[unit.race].isWeapon) {
+    if (this._config[unit.race].isWeapon) {
       this._flagClone = self.scene.getObjectByProperty(
         'uuid',
         unit.flag,
@@ -417,13 +419,14 @@ export default class NPC {
       if (this._weaponClone) this._weaponClone.removeFromParent();
     }
     unit.text.removeFromParent();
+    unit.text.dispose();
     this._list = this._list.filter((npc) => npc.id !== unit.id);
   }
 
   private _animateNPC(self: ISelf, unit: IUnitThree, info: IUnit): void {
     // Для всех кроме окончательно умерших - сдвигаем объекты по данным
     if (!unit.isDead) {
-      this._box = RacesConfig[unit.race].box;
+      this._box = this._config[unit.race].box;
       unit.positionX = info.positionX;
       unit.positionY = info.positionY;
       unit.positionZ = info.positionZ;
@@ -526,7 +529,7 @@ export default class NPC {
             if (!unit.isSetDead) {
               unit.isSetDead = true;
               this._setDeadPseudo(self, unit, this._pseudoClone, this._box.y);
-              if (RacesConfig[unit.race].isWeapon) {
+              if (this._config[unit.race].isWeapon) {
                 this._weaponClone = self.scene.getObjectByProperty(
                   'uuid',
                   unit.weapon,
@@ -577,7 +580,7 @@ export default class NPC {
         }
 
         // Флаг
-        if (RacesConfig[unit.race].isWeapon) {
+        if (this._config[unit.race].isWeapon) {
           this._flagClone = self.scene.getObjectByProperty(
             'uuid',
             unit.flag,
@@ -600,7 +603,7 @@ export default class NPC {
         unit.text.position.z = this._modelClone.position.z;
       }
 
-      if (RacesConfig[unit.race].isWeapon) {
+      if (this._config[unit.race].isWeapon) {
         this._weaponClone = self.scene.getObjectByProperty(
           'uuid',
           unit.weapon,
@@ -632,7 +635,7 @@ export default class NPC {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           unit.nextAction['_clip'].name === 'attack' &&
-          RacesConfig[unit.race].isWeapon
+          this._config[unit.race].isWeapon
         ) {
           this._weaponClone = self.scene.getObjectByProperty(
             'uuid',
@@ -645,7 +648,7 @@ export default class NPC {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           unit.prevAction['_clip'].name === 'attack' &&
-          RacesConfig[unit.race].isWeapon
+          this._config[unit.race].isWeapon
         ) {
           this._weaponClone = self.scene.getObjectByProperty(
             'uuid',
@@ -690,7 +693,7 @@ export default class NPC {
           }
 
           if (this._scaleClone) this._scaleClone.visible = false;
-          if (RacesConfig[unit.race].isWeapon) {
+          if (this._config[unit.race].isWeapon) {
             this._flagClone = self.scene.getObjectByProperty(
               'uuid',
               unit.flag,

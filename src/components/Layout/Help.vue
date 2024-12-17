@@ -276,7 +276,7 @@
               <div class="help__race">
                 <div class="help__race-image help__race-image--soldier" />
                 <div>
-                  <div class="help__race-name">{{ $t(`${Races.soldier}`) }}</div>
+                  <div class="help__race-name">{{ $t(`helpsoldier`) }}</div>
                   <div class="help__сharacteristic">
                     {{ $t(`enemy`) }}:
                     {{ $t(`${Races.orc}`) }}, {{ $t(`${Races.mutant}`) }}, {{ $t(`${Races.zombie}`) }}

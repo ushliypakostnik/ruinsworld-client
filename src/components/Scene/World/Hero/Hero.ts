@@ -827,7 +827,7 @@ export default class Hero {
         this._toruch.position.copy(self.camera.position);
         this._pseudo.position.copy(self.camera.position);
 
-        this._pseudo.rotation.y = self.camera.rotation.y;
+        // this._pseudo.rotation.y = self.camera.rotation.y;
 
         self.store.dispatch('api/setApiState', {
           field: 'updates',
@@ -835,10 +835,10 @@ export default class Hero {
             positionX: self.camera.position.x,
             positionY: self.camera.position.y,
             positionZ: self.camera.position.z,
-            directionX: this._pseudo.quaternion.x,
-            directionY: this._pseudo.quaternion.y,
-            directionZ: this._pseudo.quaternion.z,
-            directionW: this._pseudo.quaternion.w,
+            directionX: self.camera.quaternion.x,
+            directionY: self.camera.quaternion.y,
+            directionZ: self.camera.quaternion.z,
+            directionW: self.camera.quaternion.w,
             animation: this._animation,
             isFire: this._isFire,
           },
@@ -1024,7 +1024,7 @@ export default class Hero {
         self.camera.position.x,
         self.camera.position.z,
       ) >
-        DESIGN.SIZE * 0.55 &&
+      self.store.getters['persist/config']?.size * 0.75 &&
       !self.store.getters['persist/isExit']
     ) {
       self.store
@@ -1044,7 +1044,7 @@ export default class Hero {
         self.camera.position.x,
         self.camera.position.z,
       ) <
-        DESIGN.SIZE * 0.55 &&
+      self.store.getters['persist/config']?.size * 0.75 &&
       self.store.getters['persist/isExit']
     ) {
       self.store
@@ -1065,7 +1065,7 @@ export default class Hero {
         self.camera.position.x,
         self.camera.position.z,
       ) >
-      DESIGN.SIZE * 0.7
+      self.store.getters['persist/config']?.size * 0.9
     ) {
       const isRight = self.camera.position.x >= 0;
       const isBottom = self.camera.position.z >= 0;

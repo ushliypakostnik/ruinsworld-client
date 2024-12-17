@@ -137,10 +137,10 @@ export default class World {
         // А вот и коряка!!!))
         if (self.store.getters['persist/language'] === LANGUAGES[0]) {
           if (payload.race === Races.reptiloid) this._string = 'Reptiloid';
-          else this._string = 'Russian rebel';
+          else this._string = 'Rebel';
         } else {
-          if (payload.race === Races.reptiloid) this._string = 'Рептилод';
-          else this._string = 'Руский Повстанец';
+          if (payload.race === Races.reptiloid) this._string = 'Рептилоид';
+          else this._string = 'Повстанец';
         }
         self.events.messagesByIdDispatchHelper(
           self,

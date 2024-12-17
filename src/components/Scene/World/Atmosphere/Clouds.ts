@@ -14,6 +14,7 @@ export default class Clouds {
   private _cloud: Mesh;
   private _cloudClone: Mesh;
   private _number: number;
+  private _size!: number;
 
   constructor() {
     this._list = [];
@@ -23,6 +24,8 @@ export default class Clouds {
   }
 
   public init(self: ISelf): void {
+    this._size = self.store.getters['persist/config']?.size;
+
     this._cloud = new THREE.Mesh(
       new THREE.SphereBufferGeometry(2, 8, 8),
       self.assets.getMaterial(Textures.glassspecial),
@@ -31,7 +34,7 @@ export default class Clouds {
     // @ts-ignore
     this._cloud.material.opacity = 0.1;
 
-    while (this._counter < 33) {
+    while (this._counter < 15) {
       this.addCloud(self);
     }
   }
@@ -40,10 +43,18 @@ export default class Clouds {
     ++this._counter;
     this._cloudClone = this._cloud.clone();
 
-    this._cloudClone.position.set(self.helper.randomInteger(-500, 500), self.helper.randomInteger(40, 120), self.helper.randomInteger(-500, 500));
+    this._cloudClone.position.set(
+      self.helper.randomInteger(this._size * -1.5, this._size * 1.5),
+      self.helper.randomInteger(40, 120),
+      self.helper.randomInteger(this._size * -1.5, this._size * 1.5),
+    );
 
     this._number = (Math.random() + 1) * self.helper.randomInteger(3, 9);
-    this._cloudClone.scale.set(this._number, this._number, this._number * self.helper.randomInteger(2, 5));
+    this._cloudClone.scale.set(
+      this._number,
+      this._number,
+      this._number * self.helper.randomInteger(2, 5),
+    );
 
     this._list.push({
       id: this._counter,
@@ -62,9 +73,9 @@ export default class Clouds {
 
       this._cloudClone.rotateZ(self.events.delta * -1);
 
-      if (this._cloudClone.position.z < -500) {
-        this._cloudClone.position.z = 500;
-        this._cloudClone.position.x = self.helper.randomInteger(-500, 500);
+      if (this._cloudClone.position.z < this._size * -1.5) {
+        this._cloudClone.position.z = this._size * 1.5;
+        this._cloudClone.position.x = self.helper.randomInteger(this._size * -1.5, this._size * 1.5);
       }
     }
   }

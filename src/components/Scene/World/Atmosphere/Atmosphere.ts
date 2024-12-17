@@ -85,6 +85,7 @@ export default class Atmosphere {
   private _isFirst = false;
   private _location!: ILocation;
   private _number!: number;
+  private _size!: number;
   private _pseudo!: Mesh;
   private _pseudoClone!: Mesh;
   private _color!: Colors;
@@ -213,6 +214,7 @@ export default class Atmosphere {
   public init(self: ISelf): void {
     this._index = self.store.getters['persist/day'];
     this._location = self.store.getters['api/locationData'];
+    this._size = self.store.getters['persist/config']?.size;
     this.zones = [];
     this.world = [];
     this.doors = [];
@@ -241,14 +243,14 @@ export default class Atmosphere {
       0xd52a9e,
       this._DAY[this._index].intensity,
     );
-    this._light.position.set(0, DESIGN.SIZE * 2, 0).normalize();
+    this._light.position.set(0, this._size * 2, 0).normalize();
     self.scene.add(this._light);
 
     // Fog
     self.scene.fog = new THREE.Fog(
       this._DAY[this._index].fog,
-      DESIGN.SIZE / 20,
-      DESIGN.SIZE * 3,
+      this._size / 20,
+      this._size * 3,
     );
 
     // Sun
@@ -258,7 +260,7 @@ export default class Atmosphere {
     );
     this._sun.position.x = 0;
     this._sun.position.z = 0;
-    this._sun.position.y = DESIGN.SIZE * 2;
+    this._sun.position.y = this._size * 2;
     this._sun.castShadow = true;
 
     this._sun.shadow.mapSize.width = 2048;
@@ -289,7 +291,7 @@ export default class Atmosphere {
         map.encoding = THREE.sRGBEncoding;
 
         this._skyGeometry = new THREE.SphereBufferGeometry(
-          DESIGN.SIZE * 2,
+          this._size * 2.5,
           64,
           64,
         );
@@ -338,8 +340,8 @@ export default class Atmosphere {
 
         this._mesh = new THREE.Mesh(
           new THREE.PlaneBufferGeometry(
-            DESIGN.SIZE * 2,
-            DESIGN.SIZE * 2,
+            this._size * 4,
+            this._size * 4,
             32,
             32,
           ),
@@ -357,8 +359,8 @@ export default class Atmosphere {
         // Ground 2
 
         self.helper.geometry = new THREE.PlaneBufferGeometry(
-          DESIGN.SIZE * 4,
-          DESIGN.SIZE * 4,
+          this._size * 4,
+          this._size * 4,
           32,
           32,
         );
@@ -371,13 +373,13 @@ export default class Atmosphere {
 
           if (
             self.helper.distance2D(0, 0, vertex.x, vertex.y) >
-              DESIGN.SIZE * 1 &&
-            self.helper.distance2D(0, 0, vertex.x, vertex.y) < DESIGN.SIZE * 2
+              this._size * 1.25 &&
+            self.helper.distance2D(0, 0, vertex.x, vertex.y) < this._size * 2
           ) {
-            vertex.x += Math.random() * self.helper.plusOrMinus() * 2;
-            vertex.y += Math.random() * self.helper.plusOrMinus() * 2;
-            vertex.z += Math.random() * self.helper.plusOrMinus() * 2;
-            vertex.z *= Math.random() * 10;
+            vertex.x += Math.random() * self.helper.plusOrMinus();
+            vertex.y += Math.random() * self.helper.plusOrMinus();
+            vertex.z += Math.random() * self.helper.plusOrMinus();
+            vertex.z *= Math.random() * 7;
           }
 
           position.setXYZ(i, vertex.x, vertex.y, vertex.z);
@@ -471,7 +473,11 @@ export default class Atmosphere {
           -1 + (-1 * tree.scale) / 5,
           tree.z,
         );
-        this._modelClone.scale.set(tree.scale / 4, tree.scale / 4, tree.scale / 4);
+        this._modelClone.scale.set(
+          tree.scale / 4,
+          tree.scale / 4,
+          tree.scale / 4,
+        );
         this._modelClone.rotateX(self.helper.degreesToRadians(tree.rotateX));
         this._modelClone.rotateY(self.helper.degreesToRadians(tree.rotateY));
         this._modelClone.rotateZ(self.helper.degreesToRadians(tree.rotateZ));
@@ -489,11 +495,15 @@ export default class Atmosphere {
           -1 + (-1 * tree.scale) / 5,
           tree.z,
         );
-        this._pseudoClone.scale.set(tree.scale / 2.3, tree.scale * 2.5, tree.scale / 2.3);
+        this._pseudoClone.scale.set(
+          tree.scale / 2.3,
+          tree.scale * 2.5,
+          tree.scale / 2.3,
+        );
         this._pseudoClone.rotateX(self.helper.degreesToRadians(tree.rotateX));
         this._pseudoClone.rotateY(self.helper.degreesToRadians(tree.rotateY));
         this._pseudoClone.rotateZ(self.helper.degreesToRadians(tree.rotateZ));
-    
+
         this.world.push(this._pseudoClone);
         // self.scene.add(this._pseudoClone);
 
@@ -518,8 +528,12 @@ export default class Atmosphere {
 
       this._location.grasses.forEach((grass: IGrass) => {
         this._modelClone = this._model.clone();
-        this._modelClone.scale.set(grass.scale / 7.5, grass.scale / 7.5, grass.scale / 7.5);
-        this._modelClone.position.set(grass.x, -0.5 * grass.scale, grass.z);
+        this._modelClone.scale.set(
+          grass.scale / 7.5,
+          grass.scale / 7.5,
+          grass.scale / 7.5,
+        );
+        this._modelClone.position.set(grass.x, -0.5 * grass.scale - 0.5, grass.z);
 
         this._grasses.push({
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -615,18 +629,22 @@ export default class Atmosphere {
       this._pseudoClone.position.set(stone.x, stone.scaleY / 2, stone.z);
       this._pseudoClone.scale.set(stone.scaleX, stone.scaleY, stone.scaleZ);
       this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
-  
+
       this.world.push(this._pseudoClone);
       self.scene.add(this._pseudoClone);
     });
-    
+
     // Камешки
     this._location.stones4.forEach((stone: IStone2) => {
       this._pseudoClone = new THREE.Mesh(
         new THREE.BoxBufferGeometry(stone.scale, stone.scale, stone.scale),
         self.assets.getMaterial(Textures.concrette),
       );
-      this._pseudoClone.position.set(stone.x, stone.scale / 2 - 0.9 + stone.y, stone.z);
+      this._pseudoClone.position.set(
+        stone.x,
+        stone.scale / 2 - 0.9 + stone.y,
+        stone.z,
+      );
       this._pseudoClone.rotateY(self.helper.degreesToRadians(stone.rotateY));
       this._pseudoClone.rotateX(self.helper.degreesToRadians(stone.rotateX));
 
@@ -644,7 +662,7 @@ export default class Atmosphere {
             )
           : self.assets.getMaterial(Textures.metall2),
       );
-      this._pseudoClone.position.set(pin.x, pin.scale / 2 - 1  + pin.y, pin.z);
+      this._pseudoClone.position.set(pin.x, pin.scale / 2 - 1 + pin.y, pin.z);
       this._pseudoClone.rotateY(self.helper.degreesToRadians(pin.rotateY));
       this._pseudoClone.rotateX(self.helper.degreesToRadians(pin.rotateX));
 
@@ -752,7 +770,7 @@ export default class Atmosphere {
       this._pseudoClone = this._pseudo.clone();
 
       this._pseudoClone.scale.set(trash.scale, trash.scaleY, trash.scale);
-      this._pseudoClone.position.set(trash.x, -1.5, trash.z);
+      this._pseudoClone.position.set(trash.x, -1, trash.z);
       this._pseudoClone.rotateY(self.helper.degreesToRadians(trash.rotate));
 
       self.scene.add(this._pseudoClone);
@@ -780,7 +798,7 @@ export default class Atmosphere {
           this._pseudoClone = this._pseudo.clone();
 
           this._pseudoClone.scale.set(trash.scale, trash.scaleY, trash.scale);
-          this._pseudoClone.position.set(trash.x, -1.5, trash.z);
+          this._pseudoClone.position.set(trash.x, -1, trash.z);
           this._pseudoClone.rotateY(self.helper.degreesToRadians(trash.rotate));
 
           self.scene.add(this._pseudoClone);
@@ -805,24 +823,14 @@ export default class Atmosphere {
       this._group2 = new THREE.Group();
 
       this._mesh = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry(
-          15,
-          15,
-          2,
-          2,
-        ),
+        new THREE.PlaneBufferGeometry(15, 15, 2, 2),
         self.assets.getMaterial(Textures.road),
       );
       this._mesh.rotation.x = -Math.PI / 2;
       this._group.add(this._mesh);
-  
+
       this._pseudo = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry(
-          3.75,
-          0.5,
-          2,
-          2,
-        ),
+        new THREE.PlaneBufferGeometry(3.75, 0.5, 2, 2),
         self.assets.getMaterial(Textures.yellow),
       );
       this._pseudo.rotation.x = -Math.PI / 2;
@@ -835,24 +843,14 @@ export default class Atmosphere {
       this._group.add(this._pseudoClone);
 
       this._mesh = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry(
-          15,
-          15,
-          2,
-          2,
-        ),
+        new THREE.PlaneBufferGeometry(15, 15, 2, 2),
         self.assets.getMaterial(Textures.road),
       );
       this._mesh.rotation.x = -Math.PI / 2;
       this._group2.add(this._mesh);
 
       this._pseudo = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry(
-          0.5,
-          3.75,
-          2,
-          2,
-        ),
+        new THREE.PlaneBufferGeometry(0.5, 3.75, 2, 2),
         self.assets.getMaterial(Textures.yellow),
       );
       this._pseudo.rotation.x = -Math.PI / 2;
@@ -864,21 +862,21 @@ export default class Atmosphere {
       this._pseudoClone.position.z = -3.75;
       this._group2.add(this._pseudoClone);
 
-      for (let i = 0; i < 19; ++i) {
+      for (let i = 0; i < 14; ++i) {
         this._groupClone = this._group.clone();
-        this._groupClone.position.set(27.5 + (i * 15), -0.95, 0);
+        this._groupClone.position.set(27.5 + i * 15, -0.95, 0);
         self.scene.add(this._groupClone);
 
         this._groupClone = this._group.clone();
-        this._groupClone.position.set(-27.5 - (i *  15), -0.95, 0);
+        this._groupClone.position.set(-27.5 - i * 15, -0.95, 0);
         self.scene.add(this._groupClone);
 
         this._groupClone = this._group2.clone();
-        this._groupClone.position.set(0, -0.95, 27.5 + (i *  15));
+        this._groupClone.position.set(0, -0.95, 27.5 + i * 15);
         self.scene.add(this._groupClone);
 
         this._groupClone = this._group2.clone();
-        this._groupClone.position.set(0, -0.95, -27.5 - (i *  15));
+        this._groupClone.position.set(0, -0.95, -27.5 - i * 15);
         self.scene.add(this._groupClone);
       }
     }
@@ -928,12 +926,20 @@ export default class Atmosphere {
     this._zones.animate(self);
     this._clouds.animate(self);
 
-    if (!this._isStatus) {
+    if (
+      !this._isStatus &&
+      self.store.getters['api/game'] &&
+      self.store.getters['api/game'].point
+    ) {
       this._isStatus = true;
       this._status = self.store.getters['api/game'].point.status;
       this.setFlag(this._status);
     }
-    if (self.store.getters['api/game'].point.status !== this._status) {
+    if (
+      self.store.getters['api/game'] &&
+      self.store.getters['api/game'].point &&
+      self.store.getters['api/game'].point.status !== this._status
+    ) {
       this._status = self.store.getters['api/game'].point.status;
       this.setFlag(this._status);
     }

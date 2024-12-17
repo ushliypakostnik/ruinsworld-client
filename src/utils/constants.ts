@@ -253,7 +253,6 @@ export const DESIGN: TConfig = {
   BREAKPOINTS: {
     desktop: 1025,
   },
-  SIZE: 300,
   CAMERA: {
     fov: 80,
     fog: Colors.fog,
@@ -270,43 +269,6 @@ export const DESIGN: TConfig = {
   },
   UPDATE_TIME: 100,
   EFFECT_TIME: 1500,
-};
-
-// Игровые расы
-export const RacesConfig = {
-  [Races.human]: {
-    box: { x: 0.6, y: 1.8, z: 0.75 },
-    isWeapon: true,
-  },
-  [Races.reptiloid]: {
-    box: { x: 0.6, y: 1.8, z: 0.75 },
-    isWeapon: true,
-  },
-  /*
-  [Races.bidens]: {
-    box: { x: 4.5, y: 9.7, z: 3 },
-    isWeapon: false,
-  }, */
-  [Races.mutant]: {
-    box: { x: 4, y: 5, z: 2.5 },
-    isWeapon: false,
-  },
-  [Races.orc]: {
-    box: { x: 2, y: 3.6, z: 1.5 },
-    isWeapon: false,
-  },
-  [Races.zombie]: {
-    box: { x: 0.6, y: 1.9, z: 0.75 },
-    isWeapon: false,
-  },
-  [Races.soldier]: {
-    box: { x: 0.6, y: 1.8, z: 0.75 },
-    isWeapon: true,
-  },
-  [Races.cyborg]: {
-    box: { x: 0.6, y: 1.8, z: 0.75 },
-    isWeapon: true,
-  },
 };
 
 // Экранный помощник
@@ -378,7 +340,8 @@ export const MESSAGES: TMessages = {
     rule1: 'In the center of each location there are control points and shelters. You can set and change flags on them. If you died in a location that already belongs to your race, then you will be reborn on it. Otherwise - at the original command post of the race, where the flag cannot be changed.',
     rule2: 'The speed of control depends on the character’s health level and the degree of his poisoning. Players cannot fire heavy weapons while moving or jumping. If you throw a grenade launcher shell at your feet, you will die.',
     rule3: 'Now the magic and energy weapons of the NPCs are breaking through the walls. Players with a low level should not be careful and not allow themselves to be hit with a long-range shot.',
-    rule4: 'Be careful when moving between locations. It’s better to stock up on stewed meat and vodka - you can go straight into a poisoned area or be attacked by the nepis walking there.',
+    rule4: 'Be careful when moving between locations. It’s better to stock up on stewed meat and vodka - you can go straight into a poisoned area or be attacked by the nepis walking there. It is much calmer to travel on asphalt roads.',
+    helpsoldier: 'Red or NATO soldiers',
 
     scale11: 'Red scale',
     scale12: 'shows the character\'s health level.',
@@ -393,7 +356,7 @@ export const MESSAGES: TMessages = {
     scalemore: 'To the right of the scales there are icons for quick access to items (press keys 1 ... 0 to apply), indicators of their current and maximum quantity in the backpack. In the right corner you see the number of available charges for weapons, as well as their maximum number that can be collected.',
 
     friendnpc: 'Helps one of the game races!',
-    nonplayersracestext: 'As time passes, units gain experience. When picking up their corpses, players receive experience points and poisoning relative to it. Regeneration in older individuals slows down. Putin\'s cyborgs help the Rebels, have increased intelligence (responsible for visibility and speed of decision-making), and agile NATO members accept the Reptilians as a new power and order on the planet.',
+    nonplayersracestext: 'As time passes, units gain experience. When picking up their corpses, players receive experience points and poisoning relative to it. Regeneration in older individuals slows down. Red soldiers help the Rebels, and NATO members accept the Reptilians as a new power and order on the planet.',
     things: 'Items',
     thingstext: 'Some items, such as shots for weapons, are “applied” immediately when picked up. Others - you can dial a limited number and use them via shortcut keys whenever it is convenient for you.',
     thingsrare: 'Rare Items',
@@ -492,10 +455,11 @@ export const MESSAGES: TMessages = {
     feature3: '* Больше предметов. Предметы-модификаторы для более интересного боя.',
 
     history: 'В рамках подготовки к вторжению, передовые эмиссары Рептилоидов были внедрены в руководство ТНК, инвестиционных фондов и Демократической партии США. Они развязали ядерную войну, и за несколько часов перестрелки вся Земля была превращена в отравленную пустыню, а города в руины. Прошло пара сотен лет и многие живые существа мутировали в токсичных монстров, бесцельно слоняющихся среди развалин, и ведущих расовую войну все против всех. На планету также высадились основные силы Рептилов, чтобы довершить начатое. Вы можете играть или за выживших людей, повстанцев, сопротивляющихся окончательной колонизации, или за инопланетных захватчиков.',
-    rule1: 'В центре каждой локации есть контрольные точки, укрытия. На них можно устанавливать и менять флаги. Если вы погибли на локации которая уже принадлежит вашей расе - то переродитесь на ней. В противном случае - на исходном командном пункте расы, на котором нельзя поменять флаг.',
-    rule2: 'Cкорость контрола зависит от уровня здоровья персонажа и степени его отравления. Игроки не могут стрелять из тяжелого оружия когда перемешаются или прыгают. Если вы кинете из гранатомета себе снаряд под ноги, то погибнете.',
+    rule1: 'В центре каждой локации есть контрольные точки, укрытия. На них можно устанавливать и менять флаги (дает много опыта). Если вы погибли на локации которая уже принадлежит вашей расе - то переродитесь на ней. В противном случае - на исходном командном пункте расы, на котором нельзя поменять флаг.',
+    rule2: 'Cкорость контрола зависит от уровня здоровья персонажа и степени его отравления. Игроки не могут стрелять из тяжелого оружия когда перемешаются или прыгают. Если вы кинете из гранатомета снаряд себе под ноги, то погибнете.',
     rule3: 'Сейчас магия и энергетическое оружие неписей - пробивают сквозь стены. Игрокам с низким уровнем, стоит быть осторожнее, и не доводить до удара дальним по себе.',
-    rule4: 'Будьте внимательными при переходе между локациями. Лучше запаситесь тушенкой и водкой - вы можете перейти прямо в отравленную местность или под удар прогуливающейся там неписи.',
+    rule4: 'Будьте внимательными при переходе между локациями. Лучше запаситесь тушенкой и водкой - вы можете перейти прямо в отравленную местность или под удар прогуливающейся там неписи. Намного спокойнее перемещаться по асфальтированным дорогам.',
+    helpsoldier: 'Красные или НАТОвские солдаты',
 
     author: 'Левон Алексеевич Гамбарян',
 
@@ -512,7 +476,7 @@ export const MESSAGES: TMessages = {
     scalemore: 'Справа от шкал располагаются пиктограммы быстрого доступа к предметам (нажмите клавиши 1 ... 0 чтобы применить), индикаторы их актуального и максимального количества в рюкзаке. В правом углу вы видете количество имеющихся зарядов для оружия, а также их маскимальное количество которое можно собрать.',
 
     friendnpc: 'Помогает одной из игровых рас!',
-    nonplayersracestext: 'С ходом времени юниты получают опыт. При подборе их трупов игроки получают очки опыта и отравление относительно него. Регенерация у более старых особей - замедляется. Киборги Путина помогают Повстанцам, имеют повышенный интеллект (отвечает за обзор и скорость принятия решений), а проворные Натовцы - принимают Рептилоидов как новую власть, порядок на планете.',
+    nonplayersracestext: 'С ходом времени юниты получают опыт. При подборе их трупов игроки получают очки опыта и отравление относительно него. Регенерация у более старых особей - замедляется. Красные солдаты помогают Повстанцам, а Натовцы - принимают Рептилоидов как новую власть, порядок на планете.',
     things: 'Предметы',
     thingstext: 'Некоторые предметы, например, выстрелы к оружию, "применяются" сразу при подборе. Другие - можно набирать некоторое ограниченное количество и применять через клавиши быстрого доступа когда вам удобно.',
     thingsrare: 'Редкие предметы',

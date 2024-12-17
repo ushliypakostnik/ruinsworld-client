@@ -7,9 +7,7 @@ import type { ILightThree } from '@/models/api';
 // Constants
 import {
   Textures,
-  Colors,
   Audios,
-  RacesConfig,
   Races,
 } from '@/utils/constants';
 
@@ -28,15 +26,19 @@ export default class Shots {
   private _distance!: number;
   private _sound!: THREE.Mesh;
   private _soundClone!: THREE.Mesh;
+  private _config: {[key: string]: any};
 
   constructor() {
     this._list = [];
     this._listNew = [];
     this._ids = [];
     this._target = new THREE.Vector3();
+    this._config = {};
   }
 
   public init(self: ISelf): void {
+    this._config = self.store.getters['persist/config'].races;
+
     this._light = new THREE.Mesh(
       new THREE.SphereGeometry(0.25, 8, 8),
       self.assets.getMaterial(Textures.fire),
@@ -94,8 +96,8 @@ export default class Shots {
               !this._lightClone.visible &&
               this._lightClone.position.distanceTo(this._target) >
                 Math.sqrt(
-                  Math.pow(RacesConfig[light.race].box.x, 2) +
-                    Math.pow(RacesConfig[light.race].box.z, 2),
+                  Math.pow(this._config[light.race].box.x, 2) +
+                    Math.pow(this._config[light.race].box.z, 2),
                 ) *
                   2
             )
@@ -167,9 +169,9 @@ export default class Shots {
             this._lightClone.visible = false;
             if (light.race !== Races.cyborg && light.race !== Races.soldier)
               this._lightClone.scale.set(
-                RacesConfig[light.race].box.y / 2,
-                RacesConfig[light.race].box.y / 2,
-                RacesConfig[light.race].box.y / 2,
+                this._config[light.race].box.y / 2,
+                this._config[light.race].box.y / 2,
+                this._config[light.race].box.y / 2,
               );
 
             this._soundClone = this._sound.clone();

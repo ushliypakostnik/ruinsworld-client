@@ -6,7 +6,7 @@ import type { IBlood, IUnitInfo } from '@/models/api';
 import type { Mesh } from 'three';
 
 // Constants
-import { Textures, RacesConfig } from '@/utils/constants';
+import { Textures } from '@/utils/constants';
 
 export default class Bloods {
   private _list: IBlood[];
@@ -18,14 +18,17 @@ export default class Bloods {
   private _SIZE = 0.1;
   private _MAX = 1.5;
   private _SPEED = 15;
+  private _config: {[key: string]: any};
 
   constructor() {
     this._list = [];
     this._blood = new THREE.Mesh();
     this._bloodClone = new THREE.Mesh();
+    this._config = {};
   }
 
   public init(self: ISelf): void {
+    this._config = self.store.getters['persist/config'].races;
     this._blood = new THREE.Mesh(
       new THREE.SphereGeometry(this._SIZE, 8, 8),
       self.assets.getMaterial(Textures.blood),
@@ -64,7 +67,7 @@ export default class Bloods {
     if (!blood.isOff) blood.scale += self.events.delta * this._SPEED;
     else blood.scale -= self.events.delta * this._SPEED;
 
-    if (blood.scale > this._MAX * RacesConfig[blood.race].box.y / 1.8) blood.isOff = true;
+    if (blood.scale > this._MAX * this._config[blood.race].box.y / 1.8) blood.isOff = true;
 
     this._bloodClone = self.scene.getObjectByProperty(
       'uuid',
@@ -82,7 +85,7 @@ export default class Bloods {
     if (blood.scale >= 0)
       this._bloodClone.scale.set(blood.scale, blood.scale, blood.scale);
 
-    if (blood.scale >= this._MAX * RacesConfig[blood.race].box.y / 1.8) {
+    if (blood.scale >= this._MAX * this._config[blood.race].box.y / 1.8) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this._bloodClone.material.opacity = 1;

@@ -142,30 +142,6 @@ export default class Enemies {
       },
     );
 
-    /*
-    self.assets.GLTFLoader.load(
-      `./images/models/${Races.reptiloid}.glb`,
-      (model: GLTF) => {
-        this._gltf = model;
-
-        // console.log('reptiloid animation: ', this._gltf.animations);
-
-        this._modelReptil = this._gltf.scene;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this._modelReptil.traverse((child: any) => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (child.isMesh) {
-            child.castShadow = true;
-          }
-        });
-        self.helper.loaderDispatchHelper(
-          self.store,
-          Races.reptiloid as unknown as Names,
-        );
-      },
-    ); */
-
     const pseudoGeometry = new THREE.BoxBufferGeometry(
       0.6,
       DESIGN.GAMEPLAY.PLAYER_HEIGHT - 0.2,
@@ -233,8 +209,7 @@ export default class Enemies {
 
     this._scaleClone = this._scale.clone();
 
-    if (player.race === Races.human)
-      this._flagClone = this._flagRed.clone();
+    if (player.race === Races.human) this._flagClone = this._flagRed.clone();
     else this._flagClone = this._flagBlue.clone();
 
     this._name = new Text();
@@ -375,6 +350,8 @@ export default class Enemies {
       player.weapon,
     ) as Group;
     if (this._weaponClone) this._weaponClone.removeFromParent();
+    player.text.removeFromParent();
+    player.text.dispose();
     this._list = this._list.filter((user) => user.id !== player.id);
   }
 
@@ -810,7 +787,7 @@ export default class Enemies {
 
       this._target.set(
         this._user.positionX + (this._isTest ? 4 : 0),
-        this._user.positionY - (!this._isHide ? 1.5 : 1),
+        this._user.positionY - (!this._isHide ? 2 : 1.5),
         this._user.positionZ + (this._isTest ? 4 : 0),
       );
 
@@ -861,8 +838,10 @@ export default class Enemies {
           this._user.directionY,
           this._user.directionZ,
           this._user.directionW,
-        ).invert(),
+        ),
       );
+      // this._modelClone.rotation.x = 0;
+      // this._modelClone.rotation.z = 0;
       this._pseudoClone.quaternion.copy(this._modelClone.quaternion);
 
       this._scaleClone = self.scene.getObjectByProperty(
@@ -937,15 +916,25 @@ export default class Enemies {
         // @ts-ignore
         this._animation = user.nextAction['_clip'].name;
 
-        if (this._animation === 'firestand')
-          this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -1.7);
-        else if (
-          !this._animation.includes('hide') &&
-          (this._isForward || this._isBackward)
-        )
-          this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -1.7);
-        else
-          this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -1.3);
+        this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.5);
+        this._weaponClone.position.add(
+          self.helper
+            .getForwardVectorFromObject(this._modelClone)
+            .multiplyScalar(-0.75),
+        ).add(
+          self.helper
+            .getSideVectorFromObject(this._weaponClone)
+            .multiplyScalar(0.2),
+        );
+
+        if (this._animation.includes('hide')) {
+          this._weaponClone.position.y -= 0.5;
+        }
+
+        if (this._animation.includes('firestand')) {
+          this._weaponClone.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0);
+          this._weaponClone.position.y += 0.2;
+        }
 
         if (this._animation === 'jump') {
           this._weaponClone.position
@@ -959,97 +948,7 @@ export default class Enemies {
                 .getSideVectorFromObject(this._weaponClone)
                 .multiplyScalar(-0.35),
             );
-          this._weaponClone.position.y += 0.8;
-        } else if (this._animation === 'stand') {
-          this._weaponClone.position.add(
-            self.helper
-              .getSideVectorFromObject(this._weaponClone)
-              .multiplyScalar(-0.1),
-          );
-        } else if (this._animation.includes('hide')) {
-          if (this._animation === 'hide' || this._animation === 'firehide') {
-            this._weaponClone.position.add(
-              self.helper
-                .getForwardVectorFromObject(this._modelClone)
-                .multiplyScalar(this._animation === 'firehide' ? 0.45 : 0.3),
-            );
-            this._weaponClone.position.y +=
-              this._animation === 'firehide' ? 0.225 : 0.15;
-          } else {
-            if (this._isForward) {
-              this._weaponClone.position
-                .add(
-                  self.helper
-                    .getForwardVectorFromObject(this._weaponClone)
-                    .multiplyScalar(-0.1),
-                )
-                .add(
-                  self.helper
-                    .getSideVectorFromObject(this._weaponClone)
-                    .multiplyScalar(-0.5),
-                );
-            } else {
-              this._weaponClone.position
-                .add(
-                  self.helper
-                    .getForwardVectorFromObject(this._modelClone)
-                    .multiplyScalar(
-                      this._animation.includes('left') ? 0.4 : 0.5,
-                    ),
-                )
-                .add(
-                  self.helper
-                    .getSideVectorFromObject(this._modelClone)
-                    .multiplyScalar(-0.3),
-                );
-            }
-            if (this._isForward) this._weaponClone.position.y += 0.5;
-            else if (this._isBackward) this._weaponClone.position.y += 0.45;
-            else this._weaponClone.position.y += 0.4;
-          }
-          this._weaponClone.position.y -= 0.5;
-        } else {
-          if (
-            this._animation.includes('fire') ||
-            (this._animation === 'firestand' && user.fireTimer)
-          ) {
-            this._weaponClone.position
-              .add(
-                self.helper
-                  .getForwardVectorFromObject(this._modelClone)
-                  .multiplyScalar(0.1),
-              )
-              .add(
-                self.helper
-                  .getSideVectorFromObject(this._modelClone)
-                  .multiplyScalar(-0.1),
-              );
-            this._weaponClone.position.y += 0.25;
-          } else {
-            this._weaponClone.position
-              .add(
-                self.helper
-                  .getForwardVectorFromObject(this._weaponClone)
-                  .multiplyScalar(this._isBackward ? 0 : 0.2),
-              )
-              .add(
-                self.helper
-                  .getSideVectorFromObject(this._weaponClone)
-                  .multiplyScalar(
-                    this._isForward || this._isBackward ? -0.2 : -0.4,
-                  ),
-              );
-            this._weaponClone.position.y +=
-              this._animation === 'run'
-                ? 0.15
-                : this._isForward
-                ? 0.225
-                : this._isBackward
-                ? 0.2
-                : this._animation.includes('fire')
-                ? 0.25
-                : 0.05;
-          }
+          this._weaponClone.position.y += 0.5;
         }
       }
     }
