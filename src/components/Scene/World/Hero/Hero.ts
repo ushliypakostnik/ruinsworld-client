@@ -1024,7 +1024,7 @@ export default class Hero {
         self.camera.position.x,
         self.camera.position.z,
       ) >
-      self.store.getters['persist/config']?.size * 0.75 &&
+      self.store.getters['persist/config']?.size * 0.8 &&
       !self.store.getters['persist/isExit']
     ) {
       self.store
@@ -1044,7 +1044,7 @@ export default class Hero {
         self.camera.position.x,
         self.camera.position.z,
       ) <
-      self.store.getters['persist/config']?.size * 0.75 &&
+      self.store.getters['persist/config']?.size * 0.8 &&
       self.store.getters['persist/isExit']
     ) {
       self.store
@@ -1065,7 +1065,7 @@ export default class Hero {
         self.camera.position.x,
         self.camera.position.z,
       ) >
-      self.store.getters['persist/config']?.size * 0.9
+      self.store.getters['persist/config']?.size * 0.95
     ) {
       const isRight = self.camera.position.x >= 0;
       const isBottom = self.camera.position.z >= 0;
