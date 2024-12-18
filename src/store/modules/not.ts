@@ -23,6 +23,7 @@ const initialState: IStoreModule = {
   isMove: false, // Движение?
   isNotJump: false, // Прыжок?
   shotTime: 0, // Время межде выстрелами?
+  isStart: false, // Для фикса первого прыжка
 };
 
 let array: Array<TEventMessagePayload> = [];
@@ -46,6 +47,7 @@ const not: Module<IStoreModule, IStore> = {
     isMove: (state: IStoreModule) => state.isMove,
     isNotJump: (state: IStoreModule) => state.isNotJump,
     shotTime: (state: IStoreModule) => state.shotTime,
+    isStart: (state: IStoreModule) => state.isStart,
   },
 
   actions: {

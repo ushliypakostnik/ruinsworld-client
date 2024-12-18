@@ -127,6 +127,7 @@ export default class Enemies {
         // console.log('human animation: ', this._gltf.animations);
 
         this._modelHuman = this._gltf.scene;
+        this._modelHuman.scale.set(1.1, 1.1, 1.1);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this._modelHuman.traverse((child: any) => {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -202,8 +203,8 @@ export default class Enemies {
     this._modelClone = clone(this._modelHuman);
 
     this._pseudoClone = this._pseudo.clone();
-    if (this._isHide) this._pseudoClone.scale.set(1, 0.6, 1);
-    else this._pseudoClone.scale.set(1, 1, 1);
+    if (this._isHide) this._pseudoClone.scale.set(1.1, 0.8, 1.1);
+    else this._pseudoClone.scale.set(1.1, 1.2, 1.1);
 
     this._soundClone = this._sound.clone();
 
@@ -786,9 +787,9 @@ export default class Enemies {
       }
 
       this._target.set(
-        this._user.positionX + (this._isTest ? 4 : 0),
-        this._user.positionY - (!this._isHide ? 2 : 1.5),
-        this._user.positionZ + (this._isTest ? 4 : 0),
+        this._user.positionX + (this._isTest ? 2 : 0),
+        this._user.positionY - (!this._isHide ? 1.5 : 1), // Не трогать!!!
+        this._user.positionZ + (this._isTest ? 2 : 0),
       );
 
       this._item = this._list.find(

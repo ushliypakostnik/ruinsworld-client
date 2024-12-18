@@ -583,6 +583,14 @@ export default defineComponent({
         emitter.emit(EmitterEvents.location);
         if (value) {
           animate();
+
+          // Фикс "первого прыжка"
+          setTimeout(() => {
+            store.dispatch('not/setNotState', {
+              field: 'isStart',
+              value: true,
+            });
+          }, 500);
         }
       },
     );

@@ -472,7 +472,8 @@ export default class Hero {
           // Sound
           if (
             Math.abs(this._jumpFinish) > 0.1 &&
-            !self.store.getters['persist/isPause']
+            !self.store.getters['persist/isPause'] &&
+            self.store.getters['not/isStart']
           )
             self.audio.replayHeroSound(Audios.jumpend);
         }

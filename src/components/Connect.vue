@@ -420,8 +420,7 @@ export default {
 
     // Отправить обновления серверу
     sendUpdates(updates) {
-      if (!this.isPause) {
-        this.setApiState({
+      this.setApiState({
           field: 'updates',
           value: {},
         }).then(() => {
@@ -430,7 +429,6 @@ export default {
             ...updates,
           });
         });
-      }
     },
 
     // Выстрел

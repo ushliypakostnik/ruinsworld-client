@@ -819,6 +819,14 @@ export default class Atmosphere {
 
     // Дороги
     if (!(this._location.x === 0 && this._location.y === 0)) {
+      this._mesh = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(40, 40, 2, 2),
+        self.assets.getMaterial(Textures.road),
+      );
+      this._mesh.rotation.x = -Math.PI / 2;
+      this._mesh.position.y = -0.95;
+      self.scene.add(this._mesh);
+
       this._group = new THREE.Group();
       this._group2 = new THREE.Group();
 
